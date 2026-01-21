@@ -63,7 +63,7 @@ class AssemblyWorkbench(Workbench):
         # load the builtin modules
         from PySide import QtCore, QtGui
         from PySide.QtCore import QT_TRANSLATE_NOOP
-        import CommandCreateAssembly, CommandInsertLink, CommandInsertNewPart, CommandCreateJoint, CommandSolveAssembly, CommandExportASMT, CommandCreateView, CommandCreateSimulation, CommandCreateBom
+        import CommandCreateAssembly, CommandInsertLink, CommandInsertNewPart, CommandCreatePartFromFace, CommandCreateJoint, CommandSolveAssembly, CommandExportASMT, CommandCreateView, CommandCreateSimulation, CommandCreateBom
         import Preferences
 
         FreeCADGui.addLanguagePath(":/translations")
@@ -77,6 +77,7 @@ class AssemblyWorkbench(Workbench):
         cmdList = [
             "Assembly_CreateAssembly",
             "Assembly_Insert",
+            "Assembly_CreatePartFromFace",
             "Assembly_SolveAssembly",
             "Assembly_CreateView",
             "Assembly_CreateSimulation",
@@ -182,11 +183,11 @@ class AssemblyWorkbench(Workbench):
                 return self.assembly is not None and self.assembly.Document == doc
 
         class AssemblyInsertWatcher(AssemblyBaseWatcher):
-            """Shows 'Insert Component' when an assembly is active."""
+            """Shows 'Insert Component' and 'Create Part from Face' when an assembly is active."""
 
             def __init__(self):
                 super().__init__()
-                self.commands = ["Assembly_Insert"]
+                self.commands = ["Assembly_Insert", "Assembly_CreatePartFromFace"]
                 self.title = translate("Assembly", "Insert")
 
             def shouldShow(self):
