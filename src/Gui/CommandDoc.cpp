@@ -720,6 +720,9 @@ void StdCmdNew::activated(int iMsg)
     runCommand(Command::Doc, cmd.toUtf8());
     doCommand(Command::Gui, "Gui.activeDocument().activeView().viewDefaultOrientation()");
 
+    // Automatically create an assembly
+    doCommand(Command::Doc, "App.ActiveDocument.addObject('Assembly::AssemblyObject', 'Assembly')");
+
     ParameterGrp::handle hViewGrp = App::GetApplication().GetParameterGroupByPath(
         "User parameter:BaseApp/Preferences/View"
     );

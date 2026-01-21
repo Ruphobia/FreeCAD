@@ -479,36 +479,11 @@ void StartupPostProcess::showMainWindow()
 
 void StartupPostProcess::activateWorkbench()
 {
-    // Activate the correct workbench
-    std::string start = App::Application::Config()["StartWorkbench"];
+    // Always start with AssemblyWorkbench
+    std::string start = "AssemblyWorkbench";
     Base::Console().log("Init: Activating default workbench %s\n", start.c_str());
-    std::string autoload = App::GetApplication()
-                               .GetParameterGroupByPath("User parameter:BaseApp/Preferences/General")
-                               ->GetASCII("AutoloadModule", start.c_str());
-    if ("$LastModule" == autoload) {
-        start = App::GetApplication()
-                    .GetParameterGroupByPath("User parameter:BaseApp/Preferences/General")
-                    ->GetASCII("LastModule", start.c_str());
-    }
-    else {
-        start = autoload;
-    }
-    // if the auto workbench is not visible then force to use the default workbech
-    // and replace the wrong entry in the parameters
+
     QStringList wb = guiApp.workbenches();
-    if (!wb.contains(QString::fromLatin1(start.c_str()))) {
-        start = App::Application::Config()["StartWorkbench"];
-        if ("$LastModule" == autoload) {
-            App::GetApplication()
-                .GetParameterGroupByPath("User parameter:BaseApp/Preferences/General")
-                ->SetASCII("LastModule", start.c_str());
-        }
-        else {
-            App::GetApplication()
-                .GetParameterGroupByPath("User parameter:BaseApp/Preferences/General")
-                ->SetASCII("AutoloadModule", start.c_str());
-        }
-    }
 
     // Call this before showing the main window because otherwise:
     // 1. it shows a white window for a few seconds which doesn't look nice

@@ -875,10 +875,10 @@ ToolBarItem* StdWorkbench::setupToolBars() const
                      << "Std_ViewBottom"
                      << "Std_ViewLeft";
 
-    // Structure
-    auto structure = new ToolBarItem(root);
-    structure->setCommand("Structure");
-    *structure << "Std_Part" << "Std_Group" << "Std_LinkActions" << "Std_VarSet";
+    // Structure - disabled for simplified UI
+    // auto structure = new ToolBarItem(root);
+    // structure->setCommand("Structure");
+    // *structure << "Std_Part" << "Std_Group" << "Std_LinkActions" << "Std_VarSet";
 
     // Help
     auto help = new ToolBarItem(root);
