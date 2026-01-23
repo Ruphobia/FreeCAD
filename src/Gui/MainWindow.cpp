@@ -2068,6 +2068,8 @@ void MainWindow::saveWindowSettings(bool canDelay)
 
 void MainWindow::startSplasher()
 {
+    return; // Strip: no splash screen
+
     // startup splasher
     // when running in verbose mode no splasher
     if (!(App::Application::Config()["Verbose"] == "Strict")

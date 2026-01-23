@@ -449,29 +449,18 @@ void Workbench::deactivated()
 
 bool Workbench::activate()
 {
-    ToolBarItem* tb = setupToolBars();
-    setupCustomToolbars(tb, "Toolbar");
-    WorkbenchManipulator::changeToolBars(tb);
+    // Strip: pass empty items to all managers
+    ToolBarItem* tb = new ToolBarItem();
     ToolBarManager::getInstance()->setup(tb);
     delete tb;
 
-    // ToolBarItem* cb = setupCommandBars();
-    // setupCustomToolbars(cb, "Toolboxbar");
-    // ToolBoxManager::getInstance()->setup( cb );
-    // delete cb;
-
-    DockWindowItems* dw = setupDockWindows();
-    WorkbenchManipulator::changeDockWindows(dw);
+    DockWindowItems* dw = new DockWindowItems();
     DockWindowManager::instance()->setup(dw);
     delete dw;
 
-    MenuItem* mb = setupMenuBar();
-    addPermanentMenuItems(mb);
-    WorkbenchManipulator::changeMenuBar(mb);
+    MenuItem* mb = new MenuItem();
     MenuManager::getInstance()->setup(mb);
     delete mb;
-
-    setupCustomShortcuts();
 
     return true;
 }

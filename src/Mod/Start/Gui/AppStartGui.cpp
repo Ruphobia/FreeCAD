@@ -77,6 +77,7 @@ public:
 
     void Launch()
     {
+        return; // Strip: no start page
         auto hGrp = App::GetApplication().GetParameterGroupByPath(
             "User parameter:BaseApp/Preferences/Mod/Start"
         );
