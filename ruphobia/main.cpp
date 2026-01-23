@@ -137,6 +137,13 @@ static void enterSketchMode(QMainWindow* window)
     pointAction->setToolTip("Point");
     pointAction->setCheckable(true);
 
+    contextToolbar->addSeparator();
+
+    QAction* dimAction = contextToolbar->addAction(
+        QIcon(":/icons/Constraint_Dimension.svg"), "");
+    dimAction->setToolTip("Dimension (D)");
+    dimAction->setCheckable(true);
+
     // Make tools mutually exclusive
     auto setExclusive = [=](QAction* active, SketchTool tool) {
         for (auto* a : contextToolbar->actions())
@@ -164,6 +171,16 @@ static void enterSketchMode(QMainWindow* window)
     });
     QObject::connect(pointAction, &QAction::triggered, [=]() {
         setExclusive(pointAction, SketchTool::Point);
+    });
+    QObject::connect(dimAction, &QAction::triggered, [=]() {
+        setExclusive(dimAction, SketchTool::Dimension);
+    });
+
+    // Sync toolbar buttons when tool is changed via keyboard shortcut
+    QObject::connect(sketchCanvas, &SketchView::toolChangeRequested, [=](SketchTool tool) {
+        for (auto* a : contextToolbar->actions())
+            a->setChecked(false);
+        if (tool == SketchTool::Dimension) dimAction->setChecked(true);
     });
 
     window->addToolBar(contextToolbar);

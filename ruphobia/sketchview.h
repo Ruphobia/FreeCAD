@@ -6,6 +6,7 @@
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsPathItem>
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPen>
@@ -19,7 +20,8 @@ enum class SketchTool {
     Arc,
     Rectangle,
     Polyline,
-    Point
+    Point,
+    Dimension
 };
 
 class SketchView : public QGraphicsView
@@ -32,11 +34,15 @@ public:
     void setTool(SketchTool tool);
     SketchTool currentTool() const { return m_tool; }
 
+signals:
+    void toolChangeRequested(SketchTool tool);
+
 protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void drawBackground(QPainter* painter, const QRectF& rect) override;
 
 private:
@@ -68,9 +74,14 @@ private:
     double m_arcRadius = 0;
     double m_arcStartAngle = 0;
 
+    // Dimension state
+    QPointF m_dimStart;
+    QGraphicsLineItem* m_tempDimLine = nullptr;
+
     // Pens
     QPen m_sketchPen;
     QPen m_previewPen;
+    QPen m_dimensionPen;
 
     // Grid
     double m_gridSize = 10.0;
