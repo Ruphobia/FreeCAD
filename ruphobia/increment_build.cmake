@@ -1,0 +1,5 @@
+file(READ "${SRC_DIR}/build_number.txt" BUILD_NUMBER)
+string(STRIP "${BUILD_NUMBER}" BUILD_NUMBER)
+math(EXPR BUILD_NUMBER "${BUILD_NUMBER} + 1")
+file(WRITE "${SRC_DIR}/build_number.txt" "${BUILD_NUMBER}\n")
+configure_file("${SRC_DIR}/version.h.in" "${BIN_DIR}/version.h")
