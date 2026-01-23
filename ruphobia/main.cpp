@@ -11,11 +11,12 @@
 #include <zip.h>
 
 #include "version.h"
+#include "sketchview.h"
 
 static QToolBar* contextToolbar = nullptr;
+static SketchView* sketchCanvas = nullptr;
 static QString currentAssemblyPath;
 
-// Write a proper .FCStd file (ZIP archive containing Document.xml)
 static bool writeFCStd(const QString& path, const QString& objectType, const QString& objectName)
 {
     int errCode = 0;
@@ -23,7 +24,6 @@ static bool writeFCStd(const QString& path, const QString& objectType, const QSt
     if (!archive)
         return false;
 
-    // Build Document.xml content
     QByteArray xml;
     xml.append("<?xml version='1.0' encoding='utf-8'?>\n");
     xml.append("<Document SchemaVersion=\"4\" ProgramVersion=\"1.0.0\" FileVersion=\"1\">\n");
@@ -50,7 +50,6 @@ static bool writeFCStd(const QString& path, const QString& objectType, const QSt
     xml.append("  </ObjectData>\n");
     xml.append("</Document>\n");
 
-    // Add Document.xml to the ZIP
     zip_source_t* source = zip_source_buffer(archive, xml.constData(), xml.size(), 0);
     if (!source) {
         zip_discard(archive);
@@ -77,7 +76,6 @@ static void enterAssemblyMode(QMainWindow* window);
 
 static void newPart(QMainWindow* window)
 {
-    // Prompt to save the new part
     QString path = QFileDialog::getSaveFileName(window, "New Part", QString(),
                                                 "FreeCAD Files (*.FCStd)");
     if (path.isEmpty())
@@ -86,13 +84,11 @@ static void newPart(QMainWindow* window)
     if (!path.endsWith(".FCStd", Qt::CaseInsensitive))
         path.append(".FCStd");
 
-    // Create the part file
     if (!writeFCStd(path, "PartDesign::Body", QFileInfo(path).baseName())) {
         QMessageBox::critical(window, "Error", "Failed to create part file.");
         return;
     }
 
-    // Enter sketch mode
     enterSketchMode(window);
 }
 
@@ -103,31 +99,72 @@ static void enterSketchMode(QMainWindow* window)
         delete contextToolbar;
     }
 
+    // Create sketch canvas if not already present
+    if (!sketchCanvas) {
+        sketchCanvas = new SketchView(window);
+    }
+    window->setCentralWidget(sketchCanvas);
+
     contextToolbar = new QToolBar("Sketcher", window);
 
     QAction* lineAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreateLine.svg"), "");
     lineAction->setToolTip("Line");
+    lineAction->setCheckable(true);
 
     QAction* circleAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreateCircle.svg"), "");
     circleAction->setToolTip("Circle");
+    circleAction->setCheckable(true);
 
     QAction* arcAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreateArc.svg"), "");
     arcAction->setToolTip("Arc");
+    arcAction->setCheckable(true);
 
     QAction* rectAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreateRectangle.svg"), "");
     rectAction->setToolTip("Rectangle");
+    rectAction->setCheckable(true);
 
     QAction* polylineAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreatePolyline.svg"), "");
     polylineAction->setToolTip("Polyline");
+    polylineAction->setCheckable(true);
 
     QAction* pointAction = contextToolbar->addAction(
         QIcon(":/icons/Sketcher_CreatePoint.svg"), "");
     pointAction->setToolTip("Point");
+    pointAction->setCheckable(true);
+
+    // Make tools mutually exclusive
+    auto setExclusive = [=](QAction* active, SketchTool tool) {
+        for (auto* a : contextToolbar->actions())
+            if (a != active) a->setChecked(false);
+        if (active->isChecked())
+            sketchCanvas->setTool(tool);
+        else
+            sketchCanvas->setTool(SketchTool::None);
+    };
+
+    QObject::connect(lineAction, &QAction::triggered, [=]() {
+        setExclusive(lineAction, SketchTool::Line);
+    });
+    QObject::connect(circleAction, &QAction::triggered, [=]() {
+        setExclusive(circleAction, SketchTool::Circle);
+    });
+    QObject::connect(arcAction, &QAction::triggered, [=]() {
+        setExclusive(arcAction, SketchTool::Arc);
+    });
+    QObject::connect(rectAction, &QAction::triggered, [=]() {
+        setExclusive(rectAction, SketchTool::Rectangle);
+    });
+    QObject::connect(polylineAction, &QAction::triggered, [=]() {
+        setExclusive(polylineAction, SketchTool::Polyline);
+    });
+    QObject::connect(pointAction, &QAction::triggered, [=]() {
+        setExclusive(pointAction, SketchTool::Point);
+    });
 
     window->addToolBar(contextToolbar);
     contextToolbar->show();
@@ -160,7 +197,6 @@ static void newAssembly(QMainWindow* window)
     if (!path.endsWith(".FCStd", Qt::CaseInsensitive))
         path.append(".FCStd");
 
-    // Create proper .FCStd assembly file
     if (!writeFCStd(path, "App::Part", QFileInfo(path).baseName())) {
         QMessageBox::critical(window, "Error", "Failed to create assembly file.");
         return;

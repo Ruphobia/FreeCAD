@@ -17,7 +17,7 @@ add_custom_target(build_number ALL
         -P ${CMAKE_CURRENT_SOURCE_DIR}/increment_build.cmake
 )
 
-add_executable(ruphobia main.cpp resources.qrc)
+add_executable(ruphobia main.cpp sketchview.cpp resources.qrc)
 add_dependencies(ruphobia build_number)
 target_include_directories(ruphobia PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
