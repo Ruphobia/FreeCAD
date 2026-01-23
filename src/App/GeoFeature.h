@@ -65,12 +65,6 @@ public:
      * The default implementation returns null.
      */
     virtual const PropertyComplexGeoData* getPropertyOfGeometry() const;
-    /**
-     * @brief getPyObject returns the Python binding object
-     * @return the Python binding object
-     */
-    PyObject* getPyObject() override;
-
     /// Specify the type of element name to return when calling getElementName()
     enum ElementNameType
     {

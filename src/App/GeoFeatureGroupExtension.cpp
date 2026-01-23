@@ -402,7 +402,6 @@ void GeoFeatureGroupExtension::recursiveCSRelevantLinks(const DocumentObject* ob
 
 bool GeoFeatureGroupExtension::extensionGetSubObject(DocumentObject*& ret,
                                                      const char* subname,
-                                                     PyObject** pyObj,
                                                      Base::Matrix4D* mat,
                                                      bool transform,
                                                      int depth) const
@@ -447,7 +446,7 @@ bool GeoFeatureGroupExtension::extensionGetSubObject(DocumentObject*& ret,
                 const char* next = strchr(dot, '.');
                 if (next) {
                     App::DocumentObject* nret = nullptr;
-                    extensionGetSubObject(nret, dot, pyObj, mat, transform, depth + 1);
+                    extensionGetSubObject(nret, dot, mat, transform, depth + 1);
                     if (nret) {
                         ret = nret;
                         return true;
@@ -458,7 +457,7 @@ bool GeoFeatureGroupExtension::extensionGetSubObject(DocumentObject*& ret,
                 *mat *=
                     const_cast<GeoFeatureGroupExtension*>(this)->placement().getValue().toMatrix();
             }
-            ret = ret->getSubObject(dot, pyObj, mat, true, depth + 1);
+            ret = ret->getSubObject(dot, mat, true, depth + 1);
         }
     }
     return true;
@@ -560,13 +559,3 @@ bool GeoFeatureGroupExtension::extensionGetSubObjects(std::vector<std::string>& 
 }
 
 
-// Python feature ---------------------------------------------------------
-
-namespace App
-{
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::GeoFeatureGroupExtensionPython,
-                                   App::GeoFeatureGroupExtension)
-
-// explicit template instantiation
-template class AppExport ExtensionPythonT<GroupExtensionPythonT<GeoFeatureGroupExtension>>;
-}  // namespace App

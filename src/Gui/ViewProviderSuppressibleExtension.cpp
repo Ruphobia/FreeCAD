@@ -109,7 +109,5 @@ EXTENSION_PROPERTY_SOURCE_TEMPLATE(
     Gui::ViewProviderSuppressibleExtension
 )
 
-// explicit template instantiation
-template class GuiExport ViewProviderExtensionPythonT<ViewProviderSuppressibleExtension>;
 
 }  // namespace Gui

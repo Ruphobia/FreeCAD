@@ -119,10 +119,6 @@ public:
 protected:
     Expression* _copy() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
-    Py::Object _getPyValue() const override;
-
-protected:
-    mutable PyObject* cache = nullptr;
 
 private:
     Base::Quantity quantity;
@@ -169,7 +165,6 @@ public:
     bool isNumber() const;
 
 protected:
-    Py::Object _getPyValue() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
     Expression* _copy() const override;
 
@@ -237,8 +232,6 @@ public:
 protected:
     Expression* _copy() const override;
 
-    Py::Object _getPyValue() const override;
-
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
 
     void _visit(ExpressionVisitor& v) override;
@@ -276,7 +269,6 @@ protected:
     Expression* _copy() const override;
     void _visit(ExpressionVisitor& v) override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
-    Py::Object _getPyValue() const override;
 
 protected:
     Expression* condition; /**< Condition */
@@ -429,7 +421,6 @@ protected:
                                              const std::vector<Expression*>& arguments,
                                              const Base::Matrix4D* transformationMatrix);
     static Py::Object translationMatrix(double x, double y, double z);
-    Py::Object _getPyValue() const override;
     Expression* _copy() const override;
     void _visit(ExpressionVisitor& v) override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
@@ -479,7 +470,6 @@ public:
 
 protected:
     Expression* _copy() const override;
-    Py::Object _getPyValue() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
     bool _isIndexable() const override;
     void _getIdentifiers(std::map<App::ObjectIdentifier, bool>&) const override;
@@ -509,18 +499,13 @@ class AppExport PyObjectExpression: public Expression
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    explicit PyObjectExpression(const App::DocumentObject* _owner = nullptr,
-                                PyObject* pyobj = nullptr,
-                                bool owned = false)
+    explicit PyObjectExpression(const App::DocumentObject* _owner = nullptr)
         : Expression(_owner)
-    {
-        setPyValue(pyobj, owned);
-    }
+    {}
 
     ~PyObjectExpression() override;
 
     void setPyValue(Py::Object pyobj);
-    void setPyValue(PyObject* pyobj, bool owned = false);
     Expression* simplify() const override
     {
         return copy();
@@ -529,10 +514,6 @@ public:
 protected:
     Expression* _copy() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
-    Py::Object _getPyValue() const override;
-
-protected:
-    PyObject* pyObj = nullptr;
 };
 
 /**
@@ -559,7 +540,6 @@ public:
 protected:
     Expression* _copy() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
-    Py::Object _getPyValue() const override;
     bool _isIndexable() const override
     {
         return true;
@@ -567,7 +547,6 @@ protected:
 
 private:
     std::string text; /**< Text string */
-    mutable PyObject* cache = nullptr;
 };
 
 class AppExport RangeExpression: public App::Expression
@@ -590,7 +569,6 @@ public:
 protected:
     Expression* _copy() const override;
     void _toString(std::ostream& ss, bool persistent, int indent) const override;
-    Py::Object _getPyValue() const override;
     void _getIdentifiers(std::map<App::ObjectIdentifier, bool>&) const override;
     bool _renameObjectIdentifier(const std::map<ObjectIdentifier, ObjectIdentifier>&,
                                  const ObjectIdentifier&,
@@ -627,8 +605,6 @@ public:
     ~ExpressionImporter();
     static Base::XMLReader* reader();
 };
-
-AppExport bool isModuleImported(PyObject*);
 
 /**
  * @brief The semantic_type class encapsulates the value in the parse tree during parsing.

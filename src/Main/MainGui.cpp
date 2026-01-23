@@ -44,7 +44,6 @@
 // FreeCAD header
 #include <App/Application.h>
 #include <Base/ConsoleObserver.h>
-#include <Base/Interpreter.h>
 #include <Base/Parameter.h>
 #include <Base/Exception.h>
 #include <Gui/Application.h>
@@ -139,27 +138,8 @@ int main(int argc, char** argv)
     // See https://forum.freecad.org/viewtopic.php?f=18&t=20600
     // See Gui::Application::runApplication()
     putenv("LC_NUMERIC=C");
-    putenv("PYTHONPATH=");
 #elif defined(FC_OS_MACOSX)
     (void)QLocale::system();
-    putenv("PYTHONPATH=");
-#elif defined(__MINGW32__)
-    const char* mingw_prefix = getenv("MINGW_PREFIX");
-    const char* py_home = getenv("PYTHONHOME");
-    if (!py_home && mingw_prefix) {
-        _putenv_s("PYTHONHOME", mingw_prefix);
-    }
-#else
-    _putenv("PYTHONPATH=");
-    // https://forum.freecad.org/viewtopic.php?f=4&t=18288
-    // https://forum.freecad.org/viewtopic.php?f=3&t=20515
-    const char* fc_py_home = getenv("FC_PYTHONHOME");
-    if (fc_py_home) {
-        _putenv_s("PYTHONHOME", fc_py_home);
-    }
-    else {
-        _putenv("PYTHONHOME=");
-    }
 #endif
 
 #if defined(FC_OS_WIN32)
@@ -242,11 +222,6 @@ int main(int argc, char** argv)
         }
 
         Gui::Application::initApplication();
-
-        // Only if 'RunMode' is set to 'Gui' do the replacement
-        if (App::Application::Config()["RunMode"] == "Gui") {
-            Base::Interpreter().replaceStdOutput();
-        }
     }
     catch (const Base::UnknownProgramOption& e) {
         QApplication app(argc, argv);
@@ -272,36 +247,13 @@ int main(int argc, char** argv)
         exit(0);
     }
     catch (const Base::Exception& e) {
-        // Popup an own dialog box instead of that one of Windows
         QApplication app(argc, argv);
         QString appName = QString::fromStdString(App::Application::Config()["ExeName"]);
-        QString msg;
-        msg = QObject::tr(
-                  "While initializing %1 the following exception occurred: '%2'\n\n"
-                  "Python is searching for its files in the following directories:\n%3\n\n"
-                  "Python version information:\n%4\n"
+        QString msg = QObject::tr(
+                          "While initializing %1 the following exception occurred: '%2'\n\n"
+                          "Please contact the application's support team for more information.\n\n"
         )
-                  .arg(
-                      appName,
-                      QString::fromUtf8(e.what()),
-                      QString::fromStdString(Base::Interpreter().getPythonPath()),
-                      QString::fromLatin1(Py_GetVersion())
-                  );
-        const char* pythonhome = getenv("PYTHONHOME");
-        if (pythonhome) {
-            msg += QObject::tr("\nThe environment variable PYTHONHOME is set to '%1'.")
-                       .arg(QString::fromUtf8(pythonhome));
-            msg += QObject::tr(
-                "\nSetting this environment variable might cause Python to fail. "
-                "Please contact your administrator to unset it on your system.\n\n"
-            );
-        }
-        else {
-            msg += QObject::tr(
-                "\nPlease contact the application's support team for more information.\n\n"
-            );
-        }
-
+                          .arg(appName, QString::fromUtf8(e.what()));
         displayCritical(msg, false);
         exit(100);
     }
@@ -333,9 +285,6 @@ int main(int argc, char** argv)
         else {
             App::Application::runApplication();
         }
-    }
-    catch (const Base::SystemExitException& e) {
-        exit(e.getExitCode());
     }
     catch (const Base::Exception& e) {
         e.reportException();

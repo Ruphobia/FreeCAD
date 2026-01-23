@@ -23,7 +23,7 @@
 #ifndef GUI_VIEWPROVIDERGROUPEXTENSION_H
 #define GUI_VIEWPROVIDERGROUPEXTENSION_H
 
-#include "ViewProviderExtensionPython.h"
+#include "ViewProviderExtension.h"
 
 
 namespace Gui
@@ -55,8 +55,6 @@ private:
     bool guard {false};
     std::vector<ViewProvider*> nodes;
 };
-
-using ViewProviderGroupExtensionPython = ViewProviderExtensionPythonT<Gui::ViewProviderGroupExtension>;
 
 }  // namespace Gui
 

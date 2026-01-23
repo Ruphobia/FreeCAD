@@ -74,7 +74,6 @@ public:
 
     bool extensionGetSubObject(DocumentObject*& ret,
                                const char* subname,
-                               PyObject** pyObj,
                                Base::Matrix4D* mat,
                                bool transform,
                                int depth) const override;
@@ -93,8 +92,6 @@ private:
     /// Creates a localized Origin object
     App::DocumentObject* getLocalizedOrigin(App::Document* doc);
 };
-
-using OriginGroupExtensionPython = ExtensionPythonT<GroupExtensionPythonT<OriginGroupExtension>>;
 
 }  // namespace App
 

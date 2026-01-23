@@ -23,7 +23,6 @@
 #ifndef SRC_GUI_NAVICUBE_H_
 #define SRC_GUI_NAVICUBE_H_
 
-#include <CXX/Extensions.hxx>
 #include <QColor>
 #include <FCGlobal.h>
 

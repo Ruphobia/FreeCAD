@@ -65,14 +65,11 @@
 
 #include "Application.h"
 #include "ApplicationPy.h"
-#include "AxisOriginPy.h"
 #include "BitmapFactory.h"
 #include "Command.h"
 #include "CommandActionPy.h"
-#include "CommandPy.h"
 #include "Control.h"
 #include "PreferencePages/DlgSettingsCacheDirectory.h"
-#include "DocumentPy.h"
 #include "DocumentRecovery.h"
 #include "EditorView.h"
 #include "ExpressionBindingPy.h"
@@ -80,14 +77,10 @@
 #include "GuiApplication.h"
 #include "GuiInitScript.h"
 #include "InputHintPy.h"
-#include "LinkViewPy.h"
 #include "MainWindow.h"
 #include "Macro.h"
 #include "PreferencePackManager.h"
-#include "PythonConsolePy.h"
-#include "PythonDebugger.h"
 #include "MainWindowPy.h"
-#include "MDIViewPy.h"
 #include "Placement.h"
 #include "SoFCDB.h"
 #include "Selection.h"
@@ -100,8 +93,6 @@
 #include "TransactionObject.h"
 #include "TextDocumentEditorView.h"
 #include "UiLoader.h"
-#include "View3DPy.h"
-#include "View3DViewerPy.h"
 #include "View3DInventor.h"
 #include "ViewProviderAnnotation.h"
 #include "ViewProviderDocumentObject.h"
@@ -112,14 +103,12 @@
 #include "ViewProviderFeature.h"
 #include "ViewProviderGeoFeatureGroup.h"
 #include "ViewProviderGeometryObject.h"
-#include "ViewProviderGeometryObjectPy.h"
 #include "ViewProviderGroupExtension.h"
 #include "ViewProviderSuppressibleExtension.h"
 #include "ViewProviderImagePlane.h"
 #include "ViewProviderInventorObject.h"
 #include "ViewProviderLine.h"
 #include "ViewProviderLink.h"
-#include "ViewProviderLinkPy.h"
 #include "ViewProviderMaterialObject.h"
 #include "ViewProviderCoordinateSystem.h"
 #include "ViewProviderDatum.h"
@@ -128,7 +117,6 @@
 #include "ViewProviderPlane.h"
 #include "ViewProviderPoint.h"
 #include "ViewProviderPart.h"
-#include "ViewProviderFeaturePython.h"
 #include "ViewProviderTextDocument.h"
 #include "ViewProviderTextureExtension.h"
 #include "ViewProviderVRMLObject.h"
@@ -613,18 +601,6 @@ Application::Application(bool GUIenabled)
         CommandActionPy::init_type();
         Base::Interpreter().addType(CommandActionPy::type_object(), module, "CommandAction");
 
-        Base::Interpreter().addType(&LinkViewPy::Type, module, "LinkView");
-        Base::Interpreter().addType(&AxisOriginPy::Type, module, "AxisOrigin");
-        Base::Interpreter().addType(&CommandPy::Type, module, "Command");
-        Base::Interpreter().addType(&DocumentPy::Type, module, "Document");
-        Base::Interpreter().addType(&ViewProviderPy::Type, module, "ViewProvider");
-        Base::Interpreter().addType(&ViewProviderDocumentObjectPy::Type,
-                                    module,
-                                    "ViewProviderDocumentObject");
-        Base::Interpreter().addType(&ViewProviderGeometryObjectPy::Type,
-                                    module,
-                                    "ViewProviderGeometryObject");
-        Base::Interpreter().addType(&ViewProviderLinkPy::Type, module, "ViewProviderLink");
     }
 
     Base::PyGILStateLocker lock;
@@ -659,10 +635,6 @@ Application::Application(bool GUIenabled)
     OutputStderr                ::init_type();
     PythonStdin                 ::init_type();
     MainWindowPy                ::init_type();
-    MDIViewPy                   ::init_type();
-    View3DInventorPy            ::init_type();
-    View3DInventorViewerPy      ::init_type();
-    AbstractSplitViewPy         ::init_type();
     // clang-format on
 
     d = new ApplicationP(GUIenabled);

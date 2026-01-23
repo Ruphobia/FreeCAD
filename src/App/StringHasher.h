@@ -34,10 +34,7 @@
 #include <Base/Bitmask.h>
 #include <Base/Handle.h>
 #include <Base/Persistence.h>
-#include <CXX/Objects.hxx>
 #include <utility>
-
-#include <Base/PyObjectBase.h>
 
 
 namespace Data
@@ -191,10 +188,6 @@ public:
     {
         _postfix = std::move(postfix);
     }
-
-    PyObject* getPyObject() override;
-    /// Returns a Python tuple containing both the text and index
-    PyObject* getPyObjectWithIndex(int index);
 
     /** Convert to string representation of this StringID
      * @param index: optional index
@@ -564,15 +557,6 @@ public:
         }
     }
 
-    PyObject* getPyObject()
-    {
-        if (_sid) {
-            return _sid->getPyObjectWithIndex(_index);
-        }
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
     void mark() const
     {
         if (_sid) {
@@ -738,8 +722,6 @@ public:
 
     /// Return the number of hashes that are used by others
     size_t count() const;
-
-    PyObject* getPyObject() override;
 
     /** Enable/disable saving all string ID
      *

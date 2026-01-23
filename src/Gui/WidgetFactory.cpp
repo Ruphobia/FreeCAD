@@ -42,7 +42,6 @@
 
 #include "WidgetFactory.h"
 #include "PrefWidgets.h"
-#include "PythonWrapper.h"
 #include "UiLoader.h"
 
 
@@ -275,31 +274,8 @@ PreferencePagePython::PreferencePagePython(const Py::Object& p, QWidget* parent)
     : PreferencePage(parent)
     , page(p)
 {
-    Base::PyGILStateLocker lock;
-    Gui::PythonWrapper wrap;
-    if (wrap.loadCoreModule()) {
-
-        // old style class must have a form attribute while
-        // new style classes can be the widget itself
-        Py::Object widget;
-        if (page.hasAttr(std::string("form"))) {
-            widget = page.getAttr(std::string("form"));
-        }
-        else {
-            widget = page;
-        }
-
-        QObject* object = wrap.toQObject(widget);
-        if (object) {
-            QWidget* form = qobject_cast<QWidget*>(object);
-            if (form) {
-                this->setWindowTitle(form->windowTitle());
-                auto layout = new QVBoxLayout;
-                layout->addWidget(form);
-                setLayout(layout);
-            }
-        }
-    }
+    // PythonWrapper no longer available
+    (void)p;
 }
 
 PreferencePagePython::~PreferencePagePython()

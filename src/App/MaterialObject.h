@@ -27,7 +27,6 @@
 #define APP_MaterialObject_H
 
 #include "DocumentObject.h"
-#include "FeaturePython.h"
 
 
 namespace App
@@ -50,9 +49,6 @@ public:
         return "Gui::ViewProviderMaterialObject";
     }
 };
-
-using MaterialObjectPython = App::FeaturePythonT<MaterialObject>;
-
 
 }  // namespace App
 

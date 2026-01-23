@@ -24,7 +24,6 @@
 
 
 #include "ExceptionFactory.h"
-#include <CXX/Objects.hxx>
 
 
 using namespace Base;
@@ -45,19 +44,8 @@ void ExceptionFactory::Destruct()
     _pcSingleton = nullptr;
 }
 
-void ExceptionFactory::raiseException(PyObject* pydict) const
+void ExceptionFactory::raiseException(PyObject* /*pydict*/) const
 {
-    std::string classname;
-
-    Py::Dict edict(pydict);
-    if (edict.hasKey("sclassname")) {
-        classname = static_cast<std::string>(Py::String(edict.getItem("sclassname")));
-
-        auto pProd = _mpcProducers.find(classname);
-        if (pProd != _mpcProducers.end()) {
-            static_cast<AbstractExceptionProducer*>(pProd->second)->raiseException(pydict);
-        }
-    }
 }
 
 void ExceptionFactory::raiseExceptionByType(const PyExceptionData& data) const

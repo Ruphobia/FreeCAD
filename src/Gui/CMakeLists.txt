@@ -296,67 +296,7 @@ if(FREECAD_USE_SHIBOKEN)
     endif (SHIBOKEN_LIBRARY)
 endif(FREECAD_USE_SHIBOKEN)
 
-if(FREECAD_USE_PYSIDE)
-    target_include_directories(
-        FreeCADGui
-        SYSTEM
-        PUBLIC
-        ${PYSIDE_INCLUDE_DIR}
-        ${PYSIDE_INCLUDE_DIR}/QtCore
-        ${PYSIDE_INCLUDE_DIR}/QtGui
-        ${PYSIDE_INCLUDE_DIR}/QtWidgets
-    )
-    if (PYSIDE_LIBRARY)
-        list(APPEND FreeCADGui_LIBS
-            ${PYSIDE_LIBRARY}
-        )
-    else (PYSIDE_LIBRARY)
-        if (TARGET PySide2::pyside2)
-            list(APPEND FreeCADGui_LIBS
-                PySide2::pyside2
-            )
-        elseif (TARGET PySide6::pyside6)
-            list(APPEND FreeCADGui_LIBS
-                PySide6::pyside6
-            )
-        endif ()
-    endif (PYSIDE_LIBRARY)
 
-    add_definitions(-DHAVE_PYSIDE${PYSIDE_MAJOR_VERSION})
-endif(FREECAD_USE_PYSIDE)
-
-generate_from_py(Document)
-generate_from_py(PythonWorkbench)
-generate_from_py(ViewProvider)
-generate_from_py(ViewProviderDocumentObject)
-generate_from_py(ViewProviderGeometryObject)
-generate_from_py(ViewProviderExtension)
-generate_from_py(Workbench)
-generate_from_py(Selection/SelectionObject)
-generate_from_py(LinkView)
-generate_from_py(ViewProviderLink)
-generate_from_py(AxisOrigin)
-generate_from_py(Command)
-generate_from_py(Navigation/NavigationStyle)
-
-generate_embed_from_py(FreeCADGuiInit GuiInitScript.h)
-
-# The Pyi files
-SET(FreeCADGui_Pyi_SRCS
-    ViewProviderDocumentObject.pyi
-    ViewProviderGeometryObject.pyi
-    ViewProvider.pyi
-    ViewProviderExtension.pyi
-    PythonWorkbench.pyi
-    Workbench.pyi
-    Selection/SelectionObject.pyi
-    Document.pyi
-    LinkView.pyi
-    ViewProviderLink.pyi
-    AxisOrigin.pyi
-    Command.pyi
-)
-SOURCE_GROUP("Pyi" FILES ${FreeCADGui_Pyi_SRCS})
 
 # The 3D Connexion SDK files
 if(FREECAD_USE_3DCONNEXION_LEGACY AND MSVC)
@@ -469,7 +409,6 @@ SET(Gui_UIC_SRCS
     PreferencePages/DlgSettingsMacro.ui
     PreferencePages/DlgSettingsNavigation.ui
     PreferencePages/DlgSettingsNotificationArea.ui
-    PreferencePages/DlgSettingsPythonConsole.ui
     PreferencePages/DlgSettingsReportView.ui
     PreferencePages/DlgSettingsSelection.ui
     PreferencePages/DlgSettingsUI.ui
@@ -534,10 +473,8 @@ SET(Command_CPP_SRCS
     CommandView.cpp
     CommandStructure.cpp
     CommandLink.cpp
-    CommandPyImp.cpp
     ShortcutManager.cpp
     CommandCompleter.cpp
-    CommandActionPy.cpp
 )
 SET(Command_SRCS
     ${Command_CPP_SRCS}
@@ -547,7 +484,6 @@ SET(Command_SRCS
     CommandT.h
     ShortcutManager.h
     CommandCompleter.h
-    CommandActionPy.h
 )
 SOURCE_GROUP("Command" FILES ${Command_SRCS})
 
@@ -731,7 +667,6 @@ SET(Dialog_Settings_CPP_SRCS
     PreferencePages/DlgSettingsMacroImp.cpp
     PreferencePages/DlgSettingsNavigation.cpp
     PreferencePages/DlgSettingsNotificationArea.cpp
-    PreferencePages/DlgSettingsPythonConsole.cpp
     PreferencePages/DlgSettingsReportView.cpp
     PreferencePages/DlgSettingsSelection.cpp
     PreferencePages/DlgSettingsUI.cpp
@@ -754,7 +689,6 @@ SET(Dialog_Settings_HPP_SRCS
     PreferencePages/DlgSettingsMacroImp.h
     PreferencePages/DlgSettingsNavigation.h
     PreferencePages/DlgSettingsNotificationArea.h
-    PreferencePages/DlgSettingsPythonConsole.h
     PreferencePages/DlgSettingsReportView.h
     PreferencePages/DlgSettingsSelection.h
     PreferencePages/DlgSettingsUI.h
@@ -778,7 +712,6 @@ SET(Dialog_Settings_SRCS
     PreferencePages/DlgSettingsMacro.ui
     PreferencePages/DlgSettingsNavigation.ui
     PreferencePages/DlgSettingsNotificationArea.ui
-    PreferencePages/DlgSettingsPythonConsole.ui
     PreferencePages/DlgSettingsReportView.ui
     PreferencePages/DlgSettingsSelection.ui
     PreferencePages/DlgSettingsUI.ui
@@ -828,11 +761,6 @@ SET(Editor_CPP_SRCS
     CallTips.cpp
     EditorView.cpp
     TextDocumentEditorView.cpp
-    PythonConsole.cpp
-    PythonConsolePy.cpp
-    PythonDebugger.cpp
-    PythonTracing.cpp
-    PythonEditor.cpp
     SyntaxHighlighter.cpp
     TextEdit.cpp
 )
@@ -840,11 +768,6 @@ SET(Editor_HPP_SRCS
     CallTips.h
     EditorView.h
     TextDocumentEditorView.h
-    PythonConsole.h
-    PythonConsolePy.h
-    PythonDebugger.h
-    PythonTracing.h
-    PythonEditor.h
     SyntaxHighlighter.h
     TextEdit.h
 )
@@ -915,8 +838,6 @@ SET(Task_View_SRCS
     TaskView/TaskView.h
     TaskView/TaskDialog.cpp
     TaskView/TaskDialog.h
-    TaskView/TaskDialogPython.cpp
-    TaskView/TaskDialogPython.h
     TaskView/TaskWatcher.cpp
     TaskView/TaskWatcher.h
 )
@@ -966,8 +887,6 @@ SET(View3D_CPP_SRCS
     View3DInventorRiftViewer.cpp
     View3DSettings.cpp
     CoinRiftWidget.cpp
-    View3DPy.cpp
-    View3DViewerPy.cpp
     NaviCube.cpp
 )
 SET(View3D_SRCS
@@ -983,11 +902,9 @@ SET(View3D_SRCS
     View3DInventor.h
     View3DInventorSelection.h
     View3DInventorViewer.h
-    View3DPy.h
     View3DInventorRiftViewer.h
     View3DSettings.h
     CoinRiftWidget.h
-    View3DViewerPy.h
     NaviCube.h
 )
 SOURCE_GROUP("View3D" FILES ${View3D_SRCS})
@@ -995,7 +912,6 @@ SOURCE_GROUP("View3D" FILES ${View3D_SRCS})
 SET(Navigation_CPP_SRCS
     Navigation/NavigationStateChart.cpp
     Navigation/NavigationStyle.cpp
-    Navigation/NavigationStylePyImp.cpp
     Navigation/InventorNavigationStyle.cpp
     Navigation/CADNavigationStyle.cpp
     Navigation/RevitNavigationStyle.cpp
@@ -1051,7 +967,6 @@ SOURCE_GROUP("Quarter" FILES ${Quarter_SRCS})
 SET(Viewprovider_CPP_SRCS
     ViewProvider.cpp
     ViewProviderExtension.cpp
-    ViewProviderExtensionPyImp.cpp
     ViewProviderGroupExtension.cpp
     ViewProviderGeoFeatureGroupExtension.cpp
     ViewProviderOriginGroupExtension.cpp
@@ -1059,16 +974,12 @@ SET(Viewprovider_CPP_SRCS
     ViewProviderAnnotation.cpp
     ViewProviderDocumentObject.cpp
     ViewProviderDocumentObjectGroup.cpp
-    ViewProviderDocumentObjectPyImp.cpp
-    ViewProviderGeometryObjectPyImp.cpp
     ViewProviderDragger.cpp
     ViewProviderExtern.cpp
     ViewProviderFeature.cpp
     ViewProviderGeometryObject.cpp
     ViewProviderImagePlane.cpp
     ViewProviderInventorObject.cpp
-    ViewProviderPyImp.cpp
-    ViewProviderFeaturePython.cpp
     ViewProviderVRMLObject.cpp
     ViewProviderBuilder.cpp
     ViewProviderPlacement.cpp
@@ -1084,10 +995,7 @@ SET(Viewprovider_CPP_SRCS
     ViewProviderTextDocument.cpp
     ViewProviderTextureExtension.cpp
     ViewProviderLink.cpp
-    LinkViewPyImp.cpp
-    ViewProviderLinkPyImp.cpp
     ViewProviderVarSet.cpp
-    AxisOriginPyImp.cpp
     AxisOrigin.cpp
 )
 SET(Viewprovider_SRCS
@@ -1106,7 +1014,6 @@ SET(Viewprovider_SRCS
     ViewProviderGeometryObject.h
     ViewProviderImagePlane.h
     ViewProviderInventorObject.h
-    ViewProviderFeaturePython.h
     ViewProviderVRMLObject.h
     ViewProviderBuilder.h
     ViewProviderPlacement.h
@@ -1155,7 +1062,6 @@ SET(Inventor_CPP_SRCS
     SoFCDB.cpp
     SoFCInteractiveElement.cpp
     SoFCOffscreenRenderer.cpp
-    SoQtOffscreenRendererPy.cpp
     Selection/SoFCSelection.cpp
     Selection/SoFCUnifiedSelection.cpp
     Selection/SoFCSelectionContext.cpp
@@ -1196,7 +1102,6 @@ SET(Inventor_SRCS
     SoFCDB.h
     SoFCInteractiveElement.h
     SoFCOffscreenRenderer.h
-    SoQtOffscreenRendererPy.h
     Selection/SoFCSelection.h
     Selection/SoFCUnifiedSelection.h
     Selection/SoFCSelectionContext.h
@@ -1216,7 +1121,6 @@ SET(Widget_CPP_SRCS
     ComboLinks.cpp
     FileDialog.cpp
     MainWindow.cpp
-    MainWindowPy.cpp
     NotificationBox.cpp
     NotificationArea.cpp
     PrefWidgets.cpp
@@ -1226,7 +1130,6 @@ SET(Widget_CPP_SRCS
     QuantitySpinBox.cpp
     SpinBox.cpp
     SplashScreen.cpp
-    PythonWrapper.cpp
     UiLoader.cpp
     WidgetFactory.cpp
     Widgets.cpp
@@ -1241,7 +1144,6 @@ SET(Widget_HPP_SRCS
     ComboLinks.h
     FileDialog.h
     MainWindow.h
-    MainWindowPy.h
     NotificationBox.h
     NotificationArea.h
     PrefWidgets.h
@@ -1252,7 +1154,6 @@ SET(Widget_HPP_SRCS
     QuantitySpinBox_p.h
     SpinBox.h
     SplashScreen.h
-    PythonWrapper.h
     UiLoader.h
     WidgetFactory.h
     Widgets.h
@@ -1291,16 +1192,12 @@ SOURCE_GROUP("Params" FILES ${Params_SRCS})
 # The view sources
 SET(View_CPP_SRCS
     MDIView.cpp
-    MDIViewPy.cpp
-    MDIViewPyWrap.cpp
     GraphvizView.cpp
     ImageView.cpp
     ActiveObjectList.cpp
 )
 SET(View_HPP_SRCS
     MDIView.h
-    MDIViewPy.h
-    MDIViewPyWrap.h
     GraphvizView.h
     ImageView.h
     ActiveObjectList.h
@@ -1317,7 +1214,6 @@ SET(Workbench_CPP_SRCS
     OverlayManager.cpp
     OverlayWidgets.cpp
     MenuManager.cpp
-    PythonWorkbenchPyImp.cpp
     ToolBarAreaWidget.cpp
     ToolBarManager.cpp
     ToolBoxManager.cpp
@@ -1325,8 +1221,6 @@ SET(Workbench_CPP_SRCS
     WorkbenchFactory.cpp
     WorkbenchManager.cpp
     WorkbenchManipulator.cpp
-    WorkbenchManipulatorPython.cpp
-    WorkbenchPyImp.cpp
 )
 SET(Workbench_SRCS
     ${Workbench_CPP_SRCS}
@@ -1341,41 +1235,31 @@ SET(Workbench_SRCS
     WorkbenchFactory.h
     WorkbenchManager.h
     WorkbenchManipulator.h
-    WorkbenchManipulatorPython.h
 )
 SOURCE_GROUP("Workbench" FILES ${Workbench_SRCS})
 
 SET(Selection_SRCS
-    Selection/SelectionObjectPyImp.cpp
     Selection/SelectionObject.h
     Selection/SelectionObject.cpp
     Selection/Selection.h
     Selection/Selection.cpp
     Selection/SelectionFilter.h
     Selection/SelectionFilter.cpp
-    Selection/SelectionFilterPy.h
-    Selection/SelectionFilterPy.cpp
     Selection/SelectionFilter.y
     Selection/SelectionFilter.l
-    Selection/SelectionObserverPython.cpp
-    Selection/SelectionObserverPython.h
 )
 SOURCE_GROUP("Selection" FILES ${Selection_SRCS})
 
 # The FreeCADGui sources
 SET(FreeCADGui_CPP_SRCS
     Application.cpp
-    ApplicationPy.cpp
     AutoSaver.cpp
     BitmapFactory.cpp
     Document.cpp
     DocumentModel.cpp
-    DocumentPyImp.cpp
     DocumentObserver.cpp
-    DocumentObserverPython.cpp
     EditableDatumLabel.cpp
     ExpressionBinding.cpp
-    ExpressionBindingPy.cpp
     GraphicsViewZoom.cpp
     ExpressionCompleter.cpp
     FileHandler.cpp
@@ -1385,7 +1269,6 @@ SET(FreeCADGui_CPP_SRCS
     GuiApplicationNativeEventAware.cpp
     GuiConsole.cpp
     InputHintWidget.cpp
-    InputHintPy.cpp
     Macro.cpp
     MergeDocuments.cpp
     ModuleIO.cpp
@@ -1412,12 +1295,9 @@ SET(FreeCADGui_SRCS
     Document.h
     DocumentModel.h
     DocumentObserver.h
-    DocumentObserverPython.h
     EditableDatumLabel.h
     ExpressionBinding.h
-    ExpressionBindingPy.h
     ExpressionCompleter.h
-    FreeCADGuiInit.py
     FreeCADStyle.h
     GraphicsViewZoom.h
     GuiApplication.h
@@ -1426,7 +1306,6 @@ SET(FreeCADGui_SRCS
     GuiConsole.h
     InventorAll.h
     InputHint.h
-    InputHintPy.h
     InputHintWidget.h
     Macro.h
     MergeDocuments.h
@@ -1455,7 +1334,6 @@ SET(FreeCADGui_SRCS
     ${FreeCADGui_connexion_SRCS}
     ${FreeCADGui_connexion_HDRS}
     ${FreeCADGui_CPP_SRCS}
-    ${FreeCADGui_Pyi_SRCS}
     ${qsint_MOC_SRCS}
     ${Gui_QRC_SRCS}
     ${Gui_UIC_HDRS}

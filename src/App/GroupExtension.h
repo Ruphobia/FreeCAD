@@ -28,14 +28,12 @@
 
 #include <App/DocumentObject.h>
 #include <App/DocumentObjectExtension.h>
-#include <App/ExtensionPython.h>
 #include <vector>
 
 
 namespace App
 {
 class DocumentObjectGroup;
-class GroupExtensionPy;
 
 class AppExport GroupExtension: public DocumentObjectExtension
 {
@@ -121,13 +119,10 @@ public:
     static DocumentObject* getGroupOfObject(const DocumentObject* obj);
     //@}
 
-    PyObject* getExtensionPyObject() override;
-
     void extensionOnChanged(const Property* p) override;
 
     bool extensionGetSubObject(DocumentObject*& ret,
                                const char* subname,
-                               PyObject** pyObj,
                                Base::Matrix4D* mat,
                                bool transform,
                                int depth) const override;
@@ -164,35 +159,6 @@ T* GroupExtension::addObject(const char* pObjectName)
     static_assert(std::is_base_of<DocumentObject, T>::value, "T must be derived from DocumentObject");
     return static_cast<T*>(addObject(T::getClassName(), pObjectName));
 }
-
-template<typename ExtensionT>
-class GroupExtensionPythonT: public ExtensionT
-{
-
-public:
-    GroupExtensionPythonT() = default;
-    ~GroupExtensionPythonT() override = default;
-
-    // override the documentobjectextension functions to make them available in python
-    bool allowObject(DocumentObject* obj) override
-    {
-        Base::PyGILStateLocker locker;
-        Py::Object pyobj = Py::asObject(obj->getPyObject());
-        EXTENSION_PROXY_ONEARG(allowObject, pyobj);
-
-        if (result.isNone()) {
-            return ExtensionT::allowObject(obj);
-        }
-
-        if (result.isBoolean()) {
-            return result.isTrue();
-        }
-
-        return false;
-    };
-};
-
-using GroupExtensionPython = ExtensionPythonT<GroupExtensionPythonT<GroupExtension>>;
 
 }  // namespace App
 

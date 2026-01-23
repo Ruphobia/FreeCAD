@@ -145,6 +145,5 @@ namespace Gui
 PROPERTY_SOURCE_TEMPLATE(Gui::ViewProviderPlacementPython, Gui::ViewProviderPlacement)
 /// @endcond
 
-// explicit template instantiation
-template class GuiExport ViewProviderFeaturePythonT<ViewProviderPlacement>;
+
 }  // namespace Gui

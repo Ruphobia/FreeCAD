@@ -25,7 +25,6 @@
 
 #include "AxisOrigin.h"
 #include "ViewProviderGeometryObject.h"
-#include "ViewProviderFeaturePython.h"
 
 
 class SoFontStyle;
@@ -68,8 +67,6 @@ public:
 protected:
     void onChanged(const App::Property* prop) override;
 };
-
-using ViewProviderPlacementPython = ViewProviderFeaturePythonT<ViewProviderPlacement>;
 
 }  // namespace Gui
 

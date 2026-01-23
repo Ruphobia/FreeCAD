@@ -23,7 +23,6 @@
  ****************************************************************************/
 
 
-#include <Base/Interpreter.h>
 
 #include "AutoTransaction.h"
 #include "Application.h"
@@ -244,10 +243,6 @@ TransactionLocker::~TransactionLocker()
             return;
         }
         catch (Base::Exception& e) {
-            e.reportException();
-        }
-        catch (Py::Exception&) {
-            Base::PyException e;
             e.reportException();
         }
         catch (std::exception& e) {

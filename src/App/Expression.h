@@ -188,8 +188,6 @@ public:
 
     boost::any getValueAsAny() const;
 
-    Py::Object getPyValue() const;
-
     bool isSame(const Expression &other, bool checkComment=true) const;
 
     friend class ExpressionVisitor;
@@ -215,7 +213,6 @@ protected:
     }
     virtual void _moveCells(const CellAddress &, int, int, ExpressionVisitor &) {}
     virtual void _offsetCells(int, int, ExpressionVisitor &) {}
-    virtual Py::Object _getPyValue() const = 0;
     virtual void _visit(ExpressionVisitor &) {}
 
 protected:

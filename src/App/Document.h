@@ -25,7 +25,6 @@
 #ifndef SRC_APP_DOCUMENT_H_
 #define SRC_APP_DOCUMENT_H_
 
-#include <CXX/Objects.hxx>
 #include <Base/Observer.h>
 #include <Base/Persistence.h>
 #include <Base/Type.h>
@@ -634,8 +633,6 @@ public:
             [](const DocumentObject*) {
                 return true;
             });
-
-    PyObject* getPyObject() override;
 
     std::string getFullName() const override;
 

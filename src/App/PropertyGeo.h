@@ -87,9 +87,6 @@ public:
         return "Gui::PropertyEditor::PropertyVectorItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -102,8 +99,6 @@ public:
     }
 
     const boost::any getPathValue(const ObjectIdentifier& path) const override;
-
-    bool getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const override;
 
     virtual Base::Unit getUnit() const
     {
@@ -230,8 +225,6 @@ public:
     void setValue(double x, double y, double z);
     using inherited::setValue;
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -247,8 +240,6 @@ public:
         return "Gui::PropertyEditor::PropertyVectorListItem";
     }
 
-protected:
-    Base::Vector3d getPyValue(PyObject*) const override;
 };
 
 /// Property representing a 4x4 matrix
@@ -283,9 +274,6 @@ public:
     {
         return "Gui::PropertyEditor::PropertyMatrixItem";
     }
-
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -354,15 +342,10 @@ public:
 
     const boost::any getPathValue(const ObjectIdentifier& path) const override;
 
-    bool getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const override;
-
     const char* getEditorName() const override
     {
         return "Gui::PropertyEditor::PropertyPlacementItem";
     }
-
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -431,8 +414,6 @@ public:
 
     ~PropertyPlacementList() override;
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -444,8 +425,6 @@ public:
 
     unsigned int getMemSize() const override;
 
-protected:
-    Base::Placement getPyValue(PyObject* item) const override;
 };
 
 
@@ -492,15 +471,10 @@ public:
 
     const boost::any getPathValue(const ObjectIdentifier& path) const override;
 
-    bool getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const override;
-
     const char* getEditorName() const override
     {
         return "Gui::PropertyEditor::PropertyRotationItem";
     }
-
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;

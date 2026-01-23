@@ -72,8 +72,6 @@ public:
         return "Gui::PropertyEditor::PropertyIntegerItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -133,8 +131,6 @@ public:
         return "Gui::PropertyEditor::PropertyPathItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -240,8 +236,6 @@ public:
         _editorTypeName = name;
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -250,9 +244,7 @@ public:
     void Paste(const Property& from) override;
 
     void setPathValue(const App::ObjectIdentifier& path, const boost::any& value) override;
-    virtual bool setPyPathValue(const App::ObjectIdentifier& path, const Py::Object& value);
     const boost::any getPathValue(const App::ObjectIdentifier& /*path*/) const override;
-    bool getPyPathValue(const ObjectIdentifier& path, Py::Object& r) const override;
 
     bool isSame(const Property& other) const override
     {
@@ -337,7 +329,6 @@ public:
     {
         return "Gui::PropertyEditor::PropertyIntegerConstraintItem";
     }
-    void setPyObject(PyObject* py) override;
 
 protected:
     const Constraints* _ConstStruct {nullptr};
@@ -386,8 +377,6 @@ public:
         return "Gui::PropertyEditor::PropertyIntegerListItem";
     }
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -395,8 +384,6 @@ public:
     void Paste(const Property& from) override;
     unsigned int getMemSize() const override;
 
-protected:
-    long getPyValue(PyObject* item) const override;
 };
 
 /** Integer list properties
@@ -439,8 +426,6 @@ public:
         return _lValueSet;
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -508,8 +493,6 @@ public:
     // virtual const char* getEditorName(void) const { return
     // "Gui::PropertyEditor::PropertyStringListItem"; }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -565,8 +548,6 @@ public:
         return "Gui::PropertyEditor::PropertyFloatItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -671,8 +652,6 @@ public:
         return "Gui::PropertyEditor::PropertyFloatConstraintItem";
     }
 
-    void setPyObject(PyObject* py) override;
-
 protected:
     const Constraints* _ConstStruct {nullptr};
 };
@@ -719,8 +698,6 @@ public:
         return "Gui::PropertyEditor::PropertyFloatListItem";
     }
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -731,8 +708,6 @@ public:
     void Paste(const Property& from) override;
     unsigned int getMemSize() const override;
 
-protected:
-    double getPyValue(PyObject* item) const override;
 };
 
 
@@ -772,8 +747,6 @@ public:
     {
         return "Gui::PropertyEditor::PropertyStringItem";
     }
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -827,8 +800,6 @@ public:
 
     // virtual const char* getEditorName(void) const { return
     // "Gui::PropertyEditor::PropertyStringItem"; }
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -901,8 +872,6 @@ public:
         return "Gui::PropertyEditor::PropertyStringListItem";
     }
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -911,8 +880,6 @@ public:
 
     unsigned int getMemSize() const override;
 
-protected:
-    std::string getPyValue(PyObject* item) const override;
 };
 
 /** Bool properties
@@ -943,8 +910,6 @@ public:
         return "Gui::PropertyEditor::PropertyBoolItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -985,8 +950,6 @@ public:
     PropertyBoolList();
     ~PropertyBoolList() override;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -995,8 +958,6 @@ public:
     void Paste(const Property& from) override;
     unsigned int getMemSize() const override;
 
-protected:
-    bool getPyValue(PyObject* py) const override;
 };
 
 
@@ -1035,8 +996,6 @@ public:
         return "Gui::PropertyEditor::PropertyColorItem";
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -1079,8 +1038,6 @@ public:
      */
     ~PropertyColorList() override;
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -1090,9 +1047,6 @@ public:
     Property* Copy() const override;
     void Paste(const Property& from) override;
     unsigned int getMemSize() const override;
-
-protected:
-    Base::Color getPyValue(PyObject* py) const override;
 
 private:
     bool requiresAlphaConversion {false}; // In 1.1 the handling of alpha was inverted
@@ -1150,8 +1104,6 @@ public:
     double getShininess() const;
     double getTransparency() const;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* py) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -1264,8 +1216,6 @@ public:
     float getTransparency(int index) const;
     std::vector<float> getTransparencies() const;
 
-    PyObject* getPyObject() override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -1277,9 +1227,6 @@ public:
     Property* Copy() const override;
     void Paste(const Property& from) override;
     unsigned int getMemSize() const override;
-
-protected:
-    Material getPyValue(PyObject* py) const override;
 
 private:
     enum Format
@@ -1317,7 +1264,6 @@ class AppExport PropertyPersistentObject: public PropertyString
     using inherited = PropertyString;
 
 public:
-    PyObject* getPyObject() override;
     void setValue(const char* type) override;
 
     void Save(Base::Writer& writer) const override;

@@ -45,7 +45,6 @@
 #include "SoFCSelection.h"
 #include "View3DInventorViewer.h"
 #include "ViewProviderGeometryObject.h"
-#include "ViewProviderGeometryObjectPy.h"
 
 #include <Base/Tools.h>
 
@@ -359,11 +358,7 @@ void ViewProviderGeometryObject::setSelectable(bool selectable)
 
 PyObject* ViewProviderGeometryObject::getPyObject()
 {
-    if (!pyViewObject) {
-        pyViewObject = new ViewProviderGeometryObjectPy(this);
-    }
-    pyViewObject->IncRef();
-    return pyViewObject;
+    Py_Return;
 }
 
 void ViewProviderGeometryObject::handleChangedPropertyName(

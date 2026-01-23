@@ -39,7 +39,6 @@
 #include <Base/Exception.h>
 #include "SafeMode.h"
 
-#include <Python.h>
 #include <QString>
 
 #include "Base/Console.h"
@@ -143,7 +142,7 @@ fs::path ApplicationDirectories::findPath(const fs::path& stdHome, const fs::pat
     }
 
     // To write to our data path, we must create some directories, first.
-    if (create && !fs::exists(appData) && !Py_IsInitialized()) {
+    if (create && !fs::exists(appData)) {
         try {
             fs::create_directories(appData);
         } catch (const fs::filesystem_error& e) {
@@ -597,22 +596,9 @@ void ApplicationDirectories::migrateAllPaths(const std::vector<fs::path> &paths)
 
 fs::path ApplicationDirectories::findHomePath(const char* sCall)
 {
-    // We have three ways to start this application either use one of the two executables or
-    // import the FreeCAD.so module from a running Python session. In the latter case the
-    // Python interpreter is already initialized.
     std::string absPath;
     std::string homePath;
-    if (Py_IsInitialized()) {
-        // Note: `realpath` is known to cause a buffer overflow because it
-        // expands the given path to an absolute path of unknown length.
-        // Even setting PATH_MAX does not necessarily solve the problem
-        // for sure, but the risk of overflow is rather small.
-        char resolved[PATH_MAX];
-        char* path = realpath(sCall, resolved);
-        if (path)
-            absPath = path;
-    }
-    else {
+    {
         int argc = 1;
         QCoreApplication app(argc, (char**)(&sCall));
         absPath = QCoreApplication::applicationFilePath().toStdString();
@@ -637,45 +623,26 @@ fs::path ApplicationDirectories::findHomePath(const char* sCall)
 
 fs::path ApplicationDirectories::findHomePath(const char* sCall)
 {
-    // We have three ways to start this application either use one of the two executables or
-    // import the FreeCAD.so module from a running Python session. In the latter case the
-    // Python interpreter is already initialized.
     std::string absPath;
     std::string homePath;
-    if (Py_IsInitialized()) {
-        // Note: `realpath` is known to cause a buffer overflow because it
-        // expands the given path to an absolute path of unknown length.
-        // Even setting PATH_MAX does not necessarily solve the problem
-        // for sure, but the risk of overflow is rather small.
-        char resolved[PATH_MAX];
-        char* path = realpath(sCall, resolved);
-        if (path)
-            absPath = path;
-    }
-    else {
-        // Find the path of the executable. Theoretically, there could occur a
-        // race condition when using readlink, but we only use this method to
-        // get the absolute path of the executable to compute the actual home
-        // path. In the worst case we simply get q wrong path, and FreeCAD is not
-        // able to load its modules.
-        char resolved[PATH_MAX];
+    // Find the path of the executable.
+    char resolved[PATH_MAX];
 #if defined(FC_OS_BSD)
-        int mib[4];
-        mib[0] = CTL_KERN;
-        mib[1] = KERN_PROC;
-        mib[2] = KERN_PROC_PATHNAME;
-        mib[3] = -1;
-        size_t cb = sizeof(resolved);
-        sysctl(mib, 4, resolved, &cb, NULL, 0);
-        int nchars = strlen(resolved);
+    int mib[4];
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PATHNAME;
+    mib[3] = -1;
+    size_t cb = sizeof(resolved);
+    sysctl(mib, 4, resolved, &cb, NULL, 0);
+    int nchars = strlen(resolved);
 #else
-        int nchars = readlink("/proc/self/exe", resolved, PATH_MAX);
+    int nchars = readlink("/proc/self/exe", resolved, PATH_MAX);
 #endif
-        if (nchars < 0 || nchars >= PATH_MAX)
-            throw Base::FileSystemError("Cannot determine the absolute path of the executable");
-        resolved[nchars] = '\0'; // enforce null termination
-        absPath = resolved;
-    }
+    if (nchars < 0 || nchars >= PATH_MAX)
+        throw Base::FileSystemError("Cannot determine the absolute path of the executable");
+    resolved[nchars] = '\0'; // enforce null termination
+    absPath = resolved;
 
     // should be an absolute path now
     std::string::size_type pos = absPath.find_last_of("/");
@@ -694,32 +661,27 @@ fs::path ApplicationDirectories::findHomePath(const char* sCall)
 
 fs::path ApplicationDirectories::findHomePath(const char* sCall)
 {
-    // If Python is initialized at this point, then we're being run from
-    // MainPy.cpp, which hopefully rewrote argv[0] to point at the
-    // FreeCAD shared library.
-    if (!Py_IsInitialized()) {
-        uint32_t sz = 0;
+    uint32_t sz = 0;
 
-        // function only returns "sz" if the first arg is too small to hold value
-        _NSGetExecutablePath(nullptr, &sz);
+    // function only returns "sz" if the first arg is too small to hold value
+    _NSGetExecutablePath(nullptr, &sz);
 
-        if (const auto buf = new char[++sz]; _NSGetExecutablePath(buf, &sz) == 0) {
-            std::array<char, PATH_MAX> resolved{};
-            const char* path = realpath(buf, resolved.data());
-            delete [] buf;
+    if (const auto buf = new char[++sz]; _NSGetExecutablePath(buf, &sz) == 0) {
+        std::array<char, PATH_MAX> resolved{};
+        const char* path = realpath(buf, resolved.data());
+        delete [] buf;
 
-            if (path) {
-                const std::string Call(resolved.data());
-                std::string TempHomePath;
-                std::string::size_type pos = Call.find_last_of(fs::path::preferred_separator);
-                TempHomePath.assign(Call,0,pos);
-                pos = TempHomePath.find_last_of(fs::path::preferred_separator);
-                TempHomePath.assign(TempHomePath,0,pos+1);
-                return Base::FileInfo::stringToPath(TempHomePath);
-            }
-        } else {
-            delete [] buf;
+        if (path) {
+            const std::string Call(resolved.data());
+            std::string TempHomePath;
+            std::string::size_type pos = Call.find_last_of(fs::path::preferred_separator);
+            TempHomePath.assign(Call,0,pos);
+            pos = TempHomePath.find_last_of(fs::path::preferred_separator);
+            TempHomePath.assign(TempHomePath,0,pos+1);
+            return Base::FileInfo::stringToPath(TempHomePath);
         }
+    } else {
+        delete [] buf;
     }
 
     return Base::FileInfo::stringToPath(sCall);
@@ -737,7 +699,7 @@ fs::path ApplicationDirectories::findHomePath(const char* sCall)
     //   to locate the correct home directory
     wchar_t szFileName [MAX_PATH];
     QString dll(QString::fromUtf8(sCall));
-    if (Py_IsInitialized() || dll.endsWith(QLatin1String(".dll"))) {
+    if (dll.endsWith(QLatin1String(".dll"))) {
         GetModuleFileNameW(GetModuleHandleA(sCall),szFileName, MAX_PATH-1);
     }
     else {

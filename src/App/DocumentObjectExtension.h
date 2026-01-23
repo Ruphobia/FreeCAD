@@ -69,8 +69,6 @@ public:
     /// get called when object is going to be removed from the document
     virtual void onExtendedUnsetupObject();
 
-    PyObject* getExtensionPyObject() override;
-
     /// returns the type name of the ViewProviderExtension which is automatically attached
     /// to the viewprovider object when it is initiated
     virtual const char* getViewProviderExtensionName() const
@@ -85,7 +83,6 @@ public:
      */
     virtual bool extensionGetSubObject(DocumentObject*& ret,
                                        const char* subname,
-                                       PyObject** pyObj,
                                        Base::Matrix4D* mat,
                                        bool transform,
                                        int depth) const;

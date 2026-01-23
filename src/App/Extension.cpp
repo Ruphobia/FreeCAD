@@ -27,12 +27,10 @@
 #include <map>
 #include <string>
 
-#include <Base/PyObjectBase.h>
-
+#include <Base/Exception.h>
 #include "Extension.h"
 #include "ExtensionContainer.h"
-#include "ExtensionPython.h"
-#include <ExtensionPy.h>
+#include "Property.h"
 
 
 /* We do not use a standard property macro for type initiation. The reason is that we have the first
@@ -65,17 +63,6 @@ using namespace App;
 
 Extension::~Extension()
 {
-    if (!ExtensionPythonObject.is(Py::_None())) {
-        Base::PyGILStateLocker lock;
-        // Remark: The API of Py::Object has been changed to set whether the wrapper owns the passed
-        // Python object or not. In the constructor we forced the wrapper to own the object so we
-        // need not to dec'ref the Python object any more. But we must still invalidate the Python
-        // object because it need not to be destructed right now because the interpreter can own
-        // several references to it.
-        Base::PyObjectBase* obj = static_cast<Base::PyObjectBase*>(ExtensionPythonObject.ptr());
-        // Call before decrementing the reference counter, otherwise a heap error can occur
-        obj->setInvalid();
-    }
 }
 
 void Extension::initExtensionType(Base::Type type)
@@ -104,16 +91,6 @@ void Extension::initExtension(ExtensionContainer* obj)
     m_base->registerExtension(m_extensionType, this);
 }
 
-
-PyObject* Extension::getExtensionPyObject()
-{
-    if (ExtensionPythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        auto grp = new ExtensionPy(this);
-        ExtensionPythonObject = Py::Object(grp, true);
-    }
-    return Py::new_reference_to(ExtensionPythonObject);
-}
 
 std::string Extension::name() const
 {
@@ -224,10 +201,3 @@ bool Extension::extensionHandleChangedPropertyType(Base::XMLReader& reader,
     return false;
 }
 
-namespace App
-{
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::ExtensionPython, App::ExtensionPython::Inherited)
-
-// explicit template instantiation
-template class AppExport ExtensionPythonT<Extension>;
-}  // namespace App

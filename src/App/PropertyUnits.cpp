@@ -24,9 +24,6 @@
 
 #include <limits>
 
-#include <Base/QuantityPy.h>
-#include <Base/UnitPy.h>
-
 #include "PropertyUnits.h"
 #include "Expression.h"
 
@@ -58,64 +55,8 @@ const char* PropertyQuantity::getEditorName() const
     return "Gui::PropertyEditor::PropertyUnitItem";
 }
 
-PyObject* PropertyQuantity::getPyObject()
-{
-    return new QuantityPy(new Quantity(_dValue, _Unit));
-}
 
-Base::Quantity PropertyQuantity::createQuantityFromPy(PyObject* value)
-{
-    Base::Quantity quant;
 
-    if (PyUnicode_Check(value)) {
-        quant = Quantity::parse(PyUnicode_AsUTF8(value));
-    }
-    else if (PyFloat_Check(value)) {
-        quant = Quantity(PyFloat_AsDouble(value), _Unit);
-    }
-    else if (PyLong_Check(value)) {
-        quant = Quantity(double(PyLong_AsLong(value)), _Unit);
-    }
-    else if (PyObject_TypeCheck(value, &(QuantityPy::Type))) {
-        Base::QuantityPy* pcObject = static_cast<Base::QuantityPy*>(value);
-        quant = *(pcObject->getQuantityPtr());
-    }
-    else {
-        std::string error = std::string("wrong type as quantity: ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
-    }
-
-    return quant;
-}
-
-void PropertyQuantity::setPyObject(PyObject* value)
-{
-    // Set the unit if Unit object supplied, else check the unit
-    // and set the value
-
-    if (PyObject_TypeCheck(value, &(UnitPy::Type))) {
-        Base::UnitPy* pcObject = static_cast<Base::UnitPy*>(value);
-        Base::Unit unit = *(pcObject->getUnitPtr());
-        aboutToSetValue();
-        _Unit = unit;
-        hasSetValue();
-    }
-    else {
-        Base::Quantity quant = createQuantityFromPy(value);
-
-        if (quant.isDimensionless()) {
-            PropertyFloat::setValue(quant.getValue());
-            return;
-        }
-
-        if (_Unit != quant.getUnit()) {
-            throw Base::UnitsMismatchError("Not matching Unit!");
-        }
-
-        PropertyFloat::setValue(quant.getValue());
-    }
-}
 
 void PropertyQuantity::setPathValue(const ObjectIdentifier& /*path*/, const boost::any& value)
 {
@@ -181,32 +122,6 @@ double PropertyQuantityConstraint::getStepSize() const
     return 1.0;
 }
 
-void PropertyQuantityConstraint::setPyObject(PyObject* value)
-{
-    Base::Quantity quant = createQuantityFromPy(value);
-
-    double temp = quant.getValue();
-    if (_ConstStruct) {
-        if (temp > _ConstStruct->UpperBound) {
-            temp = _ConstStruct->UpperBound;
-        }
-        else if (temp < _ConstStruct->LowerBound) {
-            temp = _ConstStruct->LowerBound;
-        }
-    }
-    quant.setValue(temp);
-
-    if (quant.isDimensionless()) {
-        PropertyFloat::setValue(quant.getValue());  // clazy:exclude=skipped-base-method
-        return;
-    }
-
-    if (_Unit != quant.getUnit()) {
-        throw Base::UnitsMismatchError("Not matching Unit!");
-    }
-
-    PropertyFloat::setValue(quant.getValue());  // clazy:exclude=skipped-base-method
-}
 
 // ------------------------------------------------------
 // now all properties

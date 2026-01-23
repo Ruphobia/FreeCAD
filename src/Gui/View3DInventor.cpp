@@ -71,7 +71,6 @@
 #include "SoFCSelectionAction.h"
 #include "SoFCVectorizeSVGAction.h"
 #include "View3DInventorViewer.h"
-#include "View3DPy.h"
 #include "ViewProvider.h"
 #include "ViewProviderDocumentObject.h"
 #include "WaitCursor.h"
@@ -218,12 +217,7 @@ View3DInventor* View3DInventor::clone()
 
 PyObject* View3DInventor::getPyObject()
 {
-    if (!_viewerPy) {
-        _viewerPy = new View3DInventorPy(this);
-    }
-
-    Py_INCREF(_viewerPy);
-    return _viewerPy;
+    Py_Return;
 }
 
 void View3DInventor::applySettings()

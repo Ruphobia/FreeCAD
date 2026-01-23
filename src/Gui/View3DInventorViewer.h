@@ -513,8 +513,6 @@ public:
     void setDocument(Gui::Document* pcDocument);
     Gui::Document* getDocument();
 
-    virtual PyObject* getPyObject();
-
 protected:
     static GLenum getInternalTextureFormat();
     void renderScene();

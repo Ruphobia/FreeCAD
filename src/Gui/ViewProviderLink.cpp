@@ -70,7 +70,6 @@
 #include "BitmapFactory.h"
 #include "Control.h"
 #include "Inventor/Draggers/SoTransformDragger.h"
-#include "LinkViewPy.h"
 #include "Selection.h"
 #include "SoFCUnifiedSelection.h"
 #include "TaskTransform.h"
@@ -1058,10 +1057,7 @@ LinkView::~LinkView()
 
 PyObject* LinkView::getPyObject()
 {
-    if (PythonObject.is(Py::_None())) {
-        PythonObject = Py::Object(new LinkViewPy(this), true);
-    }
-    return Py::new_reference_to(PythonObject);
+    Py_Return;
 }
 
 void LinkView::setInvalid()
@@ -4004,5 +4000,5 @@ void ViewProviderLink::setTransformation(const SbMatrix& rcMatrix)
 namespace Gui
 {
 PROPERTY_SOURCE_TEMPLATE(Gui::ViewProviderLinkPython, Gui::ViewProviderLink)
-template class GuiExport ViewProviderFeaturePythonT<ViewProviderLink>;
+
 }  // namespace Gui

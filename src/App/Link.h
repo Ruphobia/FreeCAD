@@ -30,7 +30,6 @@
 #include <Base/Bitmask.h>
 #include "DocumentObject.h"
 #include "DocumentObjectExtension.h"
-#include "FeaturePython.h"
 #include "GroupExtension.h"
 #include "PropertyLinks.h"
 
@@ -364,7 +363,6 @@ public:
 
     bool extensionGetSubObject(DocumentObject*& ret,
                                const char* subname,
-                               PyObject** pyObj = nullptr,
                                Base::Matrix4D* mat = nullptr,
                                bool transform = false,
                                int depth = 0) const override;
@@ -386,8 +384,6 @@ public:
     int extensionSetElementVisible(const char*, bool) override;
     int extensionIsElementVisible(const char*) override;
     bool extensionHasChildElement() const override;
-
-    PyObject* getExtensionPyObject() override;
 
     Property* extensionGetPropertyByName(const char* name) const override;
 
@@ -472,7 +468,6 @@ protected:
     void detachElements();
     void checkGeoElementMap(const App::DocumentObject* obj,
                             const App::DocumentObject* linked,
-                            PyObject** pyObj,
                             const char* postfix) const;
     void updateGroup();
     void slotChangedPlainGroup(const App::DocumentObject&, const App::Property&);
@@ -503,8 +498,6 @@ protected:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-
-using LinkBaseExtensionPython = ExtensionPythonT<LinkBaseExtension>;
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -617,8 +610,6 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////
 
-using LinkExtensionPython = ExtensionPythonT<LinkExtension>;
-
 ///////////////////////////////////////////////////////////////////////////
 
 class AppExport Link: public App::DocumentObject, public App::LinkExtension
@@ -673,8 +664,6 @@ public:
     bool isLinkGroup() const override;
 };
 
-using LinkPython = App::FeaturePythonT<Link>;
-
 ///////////////////////////////////////////////////////////////////////////
 
 class AppExport LinkElement: public App::DocumentObject, public App::LinkBaseExtension
@@ -726,8 +715,6 @@ public:
     Base::Placement getPlacementOf(const std::string& sub, DocumentObject* targetObj = nullptr) override;
 };
 
-using LinkElementPython = App::FeaturePythonT<LinkElement>;
-
 ///////////////////////////////////////////////////////////////////////////
 
 class AppExport LinkGroup: public App::DocumentObject, public App::LinkBaseExtension
@@ -759,8 +746,6 @@ public:
         inherited::onDocumentRestored();
     }
 };
-
-using LinkGroupPython = App::FeaturePythonT<LinkGroup>;
 
 }  // namespace App
 

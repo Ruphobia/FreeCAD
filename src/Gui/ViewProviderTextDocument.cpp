@@ -32,7 +32,6 @@
 #include "ActionFunction.h"
 #include "Document.h"
 #include "MainWindow.h"
-#include "PythonEditor.h"
 #include "TextDocumentEditorView.h"
 #include "ViewProviderDocumentObject.h"
 
@@ -136,8 +135,7 @@ void ViewProviderTextDocument::onChanged(const App::Property* prop)
         else if (prop == &SyntaxHighlighter) {
             long value = SyntaxHighlighter.getValue();
             if (value == 1) {
-                auto pythonSyntax = new PythonSyntaxHighlighter(editorWidget);
-                pythonSyntax->setDocument(editorWidget->document());
+                // PythonSyntaxHighlighter no longer available
             }
             else {
                 auto shl = editorWidget->findChild<QSyntaxHighlighter*>();

@@ -23,7 +23,6 @@
  ***************************************************************************/
 
 #include "DocumentObjectExtension.h"
-#include "DocumentObjectExtensionPy.h"
 #include "DocumentObject.h"
 #include "ExtensionContainer.h"
 
@@ -62,16 +61,6 @@ void DocumentObjectExtension::onExtendedSetupObject()
 void DocumentObjectExtension::onExtendedUnsetupObject()
 {}
 
-PyObject* DocumentObjectExtension::getExtensionPyObject()
-{
-
-    if (ExtensionPythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        ExtensionPythonObject = Py::Object(new DocumentObjectExtensionPy(this), true);
-    }
-    return Py::new_reference_to(ExtensionPythonObject);
-}
-
 const DocumentObject* DocumentObjectExtension::getExtendedObject() const
 {
 
@@ -88,7 +77,6 @@ DocumentObject* DocumentObjectExtension::getExtendedObject()
 
 bool DocumentObjectExtension::extensionGetSubObject(DocumentObject*&,
                                                     const char*,
-                                                    PyObject**,
                                                     Base::Matrix4D*,
                                                     bool,
                                                     int) const

@@ -689,9 +689,6 @@ public:
         return _pcLink ? dynamic_cast<_type>(_pcLink) : 0;
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* value) override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -773,11 +770,6 @@ class AppExport PropertyLinkListBase: public PropertyLinkBase, public PropertyLi
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-public:
-    void setPyObject(PyObject* obj) override
-    {
-        _setPyObject(obj);
-    }
 };
 
 class AppExport PropertyLinkList
@@ -808,8 +800,6 @@ public:
     void setValues(const std::vector<DocumentObject*>& value) override;
 
     void set1Value(int idx, DocumentObject* const& value) override;
-
-    PyObject* getPyObject() override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -843,9 +833,6 @@ public:
 
     DocumentObject* findUsingMap(const std::string&, int* pindex = nullptr) const;
     DocumentObject* find(const char* sub, int* pindex = nullptr) const;
-
-protected:
-    DocumentObject* getPyValue(PyObject* item) const override;
 
 protected:
     mutable std::map<std::string, int> _nameMap;
@@ -954,9 +941,6 @@ public:
     {
         return _pcLinkSub ? dynamic_cast<_type>(_pcLinkSub) : 0;
     }
-
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* value) override;
 
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
@@ -1138,9 +1122,6 @@ public:
     void setSubListValues(const std::vector<SubSet>&);
     std::vector<SubSet> getSubListValues(bool newStyle = false) const;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     bool upgrade(Base::XMLReader& reader, const char* typeName);
@@ -1311,9 +1292,6 @@ public:
                                 App::DocumentObject* oldObj,
                                 App::DocumentObject* newObj) const override;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
     friend class DocInfo;
 
     static bool supportXLink(const App::Property* prop);
@@ -1409,8 +1387,6 @@ public:
 
     bool upgrade(Base::XMLReader& reader, const char* typeName) override;
 
-    PyObject* getPyObject() override;
-
     const char* getEditorName() const override
     {
         return "Gui::PropertyEditor::PropertyLinkItem";
@@ -1499,9 +1475,6 @@ public:
         return _Links;
     }
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject* value) override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 
@@ -1582,9 +1555,6 @@ class AppExport PropertyXLinkList: public PropertyXLinkSubList
 public:
     PropertyXLinkList();
     ~PropertyXLinkList() override;
-
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
 };
 
 

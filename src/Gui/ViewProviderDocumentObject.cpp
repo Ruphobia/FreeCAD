@@ -35,7 +35,7 @@
 #include <App/Origin.h>
 #include <Base/Tools.h>
 
-#include "ViewProviderDocumentObjectPy.h"
+
 #include "ActionFunction.h"
 #include "Application.h"
 #include "Command.h"
@@ -553,14 +553,6 @@ bool ViewProviderDocumentObject::canDelete(App::DocumentObject* obj) const
         || o->isDerivedFrom<App::Origin>();
 }
 
-PyObject* ViewProviderDocumentObject::getPyObject()
-{
-    if (!pyViewObject) {
-        pyViewObject = new ViewProviderDocumentObjectPy(this);
-    }
-    pyViewObject->IncRef();
-    return pyViewObject;
-}
 
 bool ViewProviderDocumentObject::canDropObjectEx(
     App::DocumentObject* obj,

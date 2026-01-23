@@ -28,7 +28,6 @@
 
 #include "ViewProviderDocumentObject.h"
 #include "ViewProviderGeoFeatureGroupExtension.h"
-#include "ViewProviderFeaturePython.h"
 
 namespace Gui
 {
@@ -44,8 +43,6 @@ public:
     /// destructor.
     ~ViewProviderGeoFeatureGroup() override;
 };
-
-using ViewProviderGeoFeatureGroupPython = ViewProviderFeaturePythonT<ViewProviderGeoFeatureGroup>;
 
 }  // namespace Gui
 

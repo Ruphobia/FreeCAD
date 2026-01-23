@@ -55,11 +55,6 @@ public:
     explicit SelectionObject(const SelectionChanges& msg);
     explicit SelectionObject(const App::DocumentObject*);
     ~SelectionObject() override;
-    /**
-     * The default implementation returns an instance of @ref SelectionObjectPy.
-     */
-    PyObject* getPyObject() override;
-
     /// get the SubElement name of this SelectionObject
     inline const std::vector<std::string>& getSubNames() const
     {

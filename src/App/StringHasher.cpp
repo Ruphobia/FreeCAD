@@ -26,6 +26,7 @@
 #include <deque>
 
 #include <Base/Console.h>
+#include <Base/Exception.h>
 #include <Base/Reader.h>
 #include <Base/Stream.h>
 #include <Base/Writer.h>
@@ -40,8 +41,6 @@
 
 #include "MappedElement.h"
 #include "StringHasher.h"
-#include "StringHasherPy.h"
-#include "StringIDPy.h"
 
 
 FC_LOG_LEVEL_INIT("App", true, true)
@@ -95,17 +94,7 @@ StringID::~StringID()
     }
 }
 
-PyObject* StringID::getPyObject()
-{
-    return new StringIDPy(this);
-}
 
-PyObject* StringID::getPyObjectWithIndex(int index)
-{
-    auto res = new StringIDPy(this);
-    res->_index = index;
-    return res;
-}
 
 std::string StringID::toString(int index) const
 {
@@ -846,10 +835,6 @@ unsigned int StringHasher::getMemSize() const
     return (_hashes->SaveAll ? size() : count()) * 10;
 }
 
-PyObject* StringHasher::getPyObject()
-{
-    return new StringHasherPy(this);
-}
 
 std::map<long, StringIDRef> StringHasher::getIDMap() const
 {

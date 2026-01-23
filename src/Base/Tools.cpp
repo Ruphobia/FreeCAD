@@ -30,8 +30,6 @@
 #include <QDateTime>
 #include <QTimeZone>
 
-#include "PyExport.h"
-#include "Interpreter.h"
 #include "Tools.h"
 
 namespace
@@ -129,39 +127,76 @@ std::string Base::Tools::narrow(const std::wstring& str)
 
 std::string Base::Tools::escapedUnicodeFromUtf8(const char* s)
 {
-    Base::PyGILStateLocker lock;
-    std::string escapedstr;
-
-    PyObject* unicode = PyUnicode_FromString(s);
-    if (!unicode) {
-        return escapedstr;
+    // Convert UTF-8 string to unicode escape sequences (\uXXXX / \UXXXXXXXX)
+    icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(s);
+    std::ostringstream oss;
+    for (int32_t i = 0; i < ustr.length(); ) {
+        UChar32 c = ustr.char32At(i);
+        i += U16_LENGTH(c);
+        if (c < 0x80) {
+            oss << static_cast<char>(c);
+        } else if (c <= 0xFFFF) {
+            char buf[8];
+            snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned>(c));
+            oss << buf;
+        } else {
+            char buf[12];
+            snprintf(buf, sizeof(buf), "\\U%08x", static_cast<unsigned>(c));
+            oss << buf;
+        }
     }
-
-    PyObject* escaped = PyUnicode_AsUnicodeEscapeString(unicode);
-    if (escaped) {
-        escapedstr = std::string(PyBytes_AsString(escaped));
-        Py_DECREF(escaped);
-    }
-
-    Py_DECREF(unicode);
-    return escapedstr;
+    return oss.str();
 }
 
 std::string Base::Tools::escapedUnicodeToUtf8(const std::string& s)
 {
-    Base::PyGILStateLocker lock;
-    std::string string;
-
-    PyObject* unicode
-        = PyUnicode_DecodeUnicodeEscape(s.c_str(), static_cast<Py_ssize_t>(s.size()), "strict");
-    if (!unicode) {
-        return string;
+    // Parse unicode escape sequences (\uXXXX / \UXXXXXXXX) and convert to UTF-8
+    icu::UnicodeString ustr;
+    size_t len = s.size();
+    for (size_t i = 0; i < len; ) {
+        if (s[i] == '\\' && i + 1 < len) {
+            if (s[i + 1] == 'u' && i + 5 < len) {
+                // \uXXXX
+                unsigned int cp = 0;
+                bool valid = true;
+                for (int j = 0; j < 4; ++j) {
+                    char c = s[i + 2 + j];
+                    cp <<= 4;
+                    if (c >= '0' && c <= '9') cp |= (c - '0');
+                    else if (c >= 'a' && c <= 'f') cp |= (c - 'a' + 10);
+                    else if (c >= 'A' && c <= 'F') cp |= (c - 'A' + 10);
+                    else { valid = false; break; }
+                }
+                if (valid) {
+                    ustr.append(static_cast<UChar32>(cp));
+                    i += 6;
+                    continue;
+                }
+            } else if (s[i + 1] == 'U' && i + 9 < len) {
+                // \UXXXXXXXX
+                unsigned int cp = 0;
+                bool valid = true;
+                for (int j = 0; j < 8; ++j) {
+                    char c = s[i + 2 + j];
+                    cp <<= 4;
+                    if (c >= '0' && c <= '9') cp |= (c - '0');
+                    else if (c >= 'a' && c <= 'f') cp |= (c - 'a' + 10);
+                    else if (c >= 'A' && c <= 'F') cp |= (c - 'A' + 10);
+                    else { valid = false; break; }
+                }
+                if (valid && cp <= 0x10FFFF) {
+                    ustr.append(static_cast<UChar32>(cp));
+                    i += 10;
+                    continue;
+                }
+            }
+        }
+        ustr.append(static_cast<UChar32>(static_cast<unsigned char>(s[i])));
+        ++i;
     }
-    if (PyUnicode_Check(unicode)) {
-        string = PyUnicode_AsUTF8(unicode);
-    }
-    Py_DECREF(unicode);
-    return string;
+    std::string result;
+    ustr.toUTF8String(result);
+    return result;
 }
 
 std::string Base::Tools::escapeQuotesFromString(const std::string& s)
@@ -326,12 +361,7 @@ std::vector<std::string> Base::Tools::splitSubName(const std::string& subname)
 
 void Base::ZipTools::rewrite(const std::string& source, const std::string& target)
 {
-    Base::PyGILStateLocker lock;
-    PyObject* module = PyImport_ImportModule("freecad.utils_zip");
-    if (!module) {
-        throw Py::Exception();
-    }
-
-    Py::Module commands(module, true);
-    commands.callMemberFunction("rewrite", Py::TupleN(Py::String(source), Py::String(target)));
+    // Strip: Python removed - zip rewrite not implemented
+    (void)source;
+    (void)target;
 }

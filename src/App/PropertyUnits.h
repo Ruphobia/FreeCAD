@@ -54,9 +54,6 @@ public:
 
     const char* getEditorName() const override;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
     void setUnit(const Base::Unit& u)
     {
         _Unit = u;
@@ -98,7 +95,6 @@ public:
     }
 
 protected:
-    Base::Quantity createQuantityFromPy(PyObject* value);
     Base::Unit _Unit;
     Base::QuantityFormat _Format;
 };
@@ -139,7 +135,6 @@ public:
     double getStepSize() const;
 
     const char* getEditorName() const override;
-    void setPyObject(PyObject*) override;
 
 private:
     const Constraints* _ConstStruct {nullptr};

@@ -328,8 +328,6 @@ public:
     /// called by Application before being deleted
     void beforeDelete();
 
-    PyObject* getPyObject() override;
-
     const char* getCameraSettings() const;
     bool saveCameraSettings(const char*) const;
 

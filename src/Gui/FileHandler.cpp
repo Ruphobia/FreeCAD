@@ -33,7 +33,6 @@
 #include "BitmapFactory.h"
 #include "CommandT.h"
 #include "EditorView.h"
-#include "PythonEditor.h"
 #include "MainWindow.h"
 #include <App/Application.h>
 #include <Base/Tools.h>
@@ -205,10 +204,5 @@ void FileHandler::openImage()
 
 void FileHandler::openPython()
 {
-    auto editor = new PythonEditor();
-    editor->setWindowIcon(Gui::BitmapFactory().iconFromTheme("applications-python"));
-    auto edit = new PythonEditorView(editor, getMainWindow());
-    edit->open(filename);
-    edit->resize(400, 300);
-    getMainWindow()->addWindow(edit);
+    // PythonEditor no longer available
 }

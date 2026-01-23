@@ -84,32 +84,19 @@ class ExceptionProducer: public AbstractExceptionProducer
 public:
     ExceptionProducer()
     {
-        CLASS cls;
-        pyExcType = cls.getPyExceptionType();
         ExceptionFactory::Instance().AddProducer(typeid(CLASS).name(), this);
     }
 
-    void raiseException(PyObject* pydict) const override
+    void raiseException(PyObject* /*pydict*/) const override
     {
         CLASS cls;
-        cls.setPyObject(pydict);
-
         throw cls;
     }
 
-    void raiseExceptionByType(const PyExceptionData& data) const override
+    void raiseExceptionByType(const PyExceptionData& /*data*/) const override
     {
-        if (pyExcType == data.pyexc) {
-            CLASS cls;
-            cls.setMessage(data.message);
-            cls.setReported(data.reported);
-
-            throw cls;
-        }
+        // No-op: Python exception type matching is not available without Python
     }
-
-private:
-    PyObject* pyExcType {};
 };
 
 }  // namespace Base

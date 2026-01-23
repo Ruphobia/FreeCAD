@@ -29,12 +29,8 @@
 # include <windows.h>
 #endif
 #include <cstring>
-#include <Python.h>
-
-#include <frameobject.h>
 
 #include "ConsoleObserver.h"
-#include "Interpreter.h"
 #include "Tools.h"
 
 
@@ -342,18 +338,7 @@ std::stringstream& LogLevel::prefix(std::stringstream& str, const char* src, int
         str << '<' << tag << "> ";
     }
     if (print_src == 2) {
-        Base::PyGILStateLocker lock;
-        PyFrameObject* frame = PyEval_GetFrame();
-        if (frame) {
-            line = PyFrame_GetLineNumber(frame);
-#if PY_VERSION_HEX < 0x030b0000
-            src = PyUnicode_AsUTF8(frame->f_code->co_filename);
-#else
-            PyCodeObject* code = PyFrame_GetCode(frame);
-            src = PyUnicode_AsUTF8(code->co_filename);
-            Py_DECREF(code);
-#endif
-        }
+        // Python frame access removed
     }
     if (print_src && !Base::Tools::isNullOrEmpty(src)) {
 #ifdef FC_OS_WIN32

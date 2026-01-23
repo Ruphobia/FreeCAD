@@ -30,11 +30,9 @@
 #include <tuple>
 #include <functional>
 #include <string>
-#include <Python.h>
 #include <App/DocumentObject.h>
 #include <Base/Vector3D.h>
 #include <App/DocumentObserver.h>
-#include <Base/Interpreter.h>
 
 #include <FCGlobal.h>
 
@@ -85,7 +83,6 @@ struct MeasureType
     MeasurePrioritizeMethod prioritizeCb;
 
     bool isPython;
-    PyObject* pythonClass;
 };
 
 struct MeasureHandler
@@ -117,7 +114,6 @@ public:
                                MeasureValidateMethod validatorCb,
                                MeasurePrioritizeMethod prioritizeCb);
     static const std::vector<MeasureType*> getMeasureTypes();
-    static Py::Tuple getSelectionPy(const App::MeasureSelection& selection);
     static std::vector<MeasureType*> getValidMeasureTypes(App::MeasureSelection selection,
                                                           std::string mode);
 

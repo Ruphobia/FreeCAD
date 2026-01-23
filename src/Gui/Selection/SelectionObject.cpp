@@ -27,7 +27,6 @@
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/DocumentObject.h>
-#include <Gui/Selection/SelectionObjectPy.h>
 
 #include "SelectionObject.h"
 #include "Selection.h"
@@ -101,7 +100,4 @@ std::string SelectionObject::getAsPropertyLinkSubString() const
     return str.str();
 }
 
-PyObject* SelectionObject::getPyObject()
-{
-    return new SelectionObjectPy(new SelectionObject(*this));
-}
+

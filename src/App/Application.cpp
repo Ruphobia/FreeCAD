@@ -69,68 +69,47 @@
 #include <QStandardPaths>
 #include <LibraryVersions.h>
 
-#include <App/MaterialPy.h>
-#include <App/MetadataPy.h>
 // FreeCAD Base header
-#include <Base/AxisPy.h>
 #include <Base/BaseClass.h>
-#include <Base/BoundBoxPy.h>
+#include <Base/Sequencer.h>
 #include <Base/ConsoleObserver.h>
 #include <Base/ServiceProvider.h>
-#include <Base/CoordinateSystemPy.h>
 #include <Base/Exception.h>
 #include <Base/ExceptionFactory.h>
 #include <Base/FileInfo.h>
-#include <Base/GeometryPyCXX.h>
-#include <Base/Interpreter.h>
-#include <Base/MatrixPy.h>
-#include <Base/QuantityPy.h>
 #include <Base/Parameter.h>
 #include <Base/Persistence.h>
-#include <Base/PlacementPy.h>
-#include <Base/PrecisionPy.h>
-#include <Base/ProgressIndicatorPy.h>
-#include <Base/RotationPy.h>
 #include <Base/UniqueNameManager.h>
 #include <Base/Tools.h>
 #include <Base/Translate.h>
 #include <Base/Type.h>
-#include <Base/TypePy.h>
-#include <Base/UnitPy.h>
 #include <Base/UnitsApi.h>
-#include <Base/VectorPy.h>
 
 #include "Annotation.h"
 #include "Application.h"
 #include "ApplicationDirectories.h"
-#include "ApplicationDirectoriesPy.h"
+#include "Document.h"
 #include "CleanupProcess.h"
 #include "ComplexGeoData.h"
 #include "Services.h"
 #include "DocumentObjectFileIncluded.h"
 #include "DocumentObjectGroup.h"
-#include "DocumentObjectGroupPy.h"
 #include "DocumentObserver.h"
-#include "DocumentPy.h"
 #include "ExpressionParser.h"
 #include "FeatureTest.h"
-#include "FeaturePython.h"
 #include "GeoFeature.h"
 #include "GeoFeatureGroupExtension.h"
 #include "ImagePlane.h"
 #include "InventorObject.h"
 #include "Link.h"
-#include "LinkBaseExtensionPy.h"
 #include "VarSet.h"
 #include "MaterialObject.h"
-#include "MeasureManagerPy.h"
+#include "Metadata.h"
 #include "Origin.h"
 #include "Datums.h"
 #include "OriginGroupExtension.h"
-#include "OriginGroupExtensionPy.h"
 #include "SuppressibleExtension.h"
 #include "Part.h"
-#include "GeoFeaturePy.h"
 #include "Placement.h"
 #include "ProgramOptionsUtilities.h"
 #include "Property.h"
@@ -138,9 +117,6 @@
 #include "PropertyExpressionEngine.h"
 #include "PropertyFile.h"
 #include "PropertyLinks.h"
-#include "PropertyPythonObject.h"
-#include "StringHasherPy.h"
-#include "StringIDPy.h"
 #include "TextDocument.h"
 #include "Transactions.h"
 #include "VRMLObject.h"
@@ -153,8 +129,6 @@
 
 
 // scriptings (scripts are built-in but can be overridden by command line option)
-#include <App/InitScript.h>
-#include <App/TestScript.h>
 #include <App/CMakeScript.h>
 
 #include "SafeMode.h"
@@ -193,234 +167,15 @@ std::unique_ptr<ApplicationDirectories> Application::_appDirs;
 //**************************************************************************
 // Construction and destruction
 
-// clang-format off
-PyDoc_STRVAR(FreeCAD_doc,
-     "The functions in the FreeCAD module allow working with documents.\n"
-     "The FreeCAD instance provides a list of references of documents which\n"
-     "can be addressed by a string. Hence the document name must be unique.\n"
-     "\n"
-     "The document has the read-only attribute FileName which points to the\n"
-     "file the document should be stored to.\n"
-    );
-
-PyDoc_STRVAR(Console_doc,
-    "FreeCAD Console module.\n\n"
-    "The Console module contains functions to manage log entries, messages,\n"
-    "warnings and errors.\n"
-    "There are also functions to get/set the status of the observers used as\n"
-    "logging interfaces."
-    );
-
-PyDoc_STRVAR(Base_doc,
-    "The Base module contains the classes for the geometric basics\n"
-    "like vector, matrix, bounding box, placement, rotation, axis, ...\n"
-    );
-
-// This is called via the PyImport_AppendInittab mechanism called
-// during initialization, to make the built-in __FreeCADBase__
-// module known to Python.
-PyMODINIT_FUNC
-init_freecad_base_module(void)
-{
-    static struct PyModuleDef BaseModuleDef = {
-        PyModuleDef_HEAD_INIT,
-        "__FreeCADBase__", Base_doc, -1,
-        nullptr, nullptr, nullptr, nullptr, nullptr
-    };
-    return PyModule_Create(&BaseModuleDef);
-}
-
-// Set in inside Application
-static PyMethodDef* ApplicationMethods = nullptr;
-
-PyMODINIT_FUNC
-init_freecad_module(void)
-{
-    static struct PyModuleDef FreeCADModuleDef = {
-        PyModuleDef_HEAD_INIT,
-        "FreeCAD", FreeCAD_doc, -1,
-        ApplicationMethods,
-        nullptr, nullptr, nullptr, nullptr
-    };
-    return PyModule_Create(&FreeCADModuleDef);
-}
-
-PyMODINIT_FUNC
-init_image_module()
-{
-    static struct PyModuleDef ImageModuleDef = {
-        PyModuleDef_HEAD_INIT,
-        "Image", "", -1,
-        nullptr,
-        nullptr, nullptr, nullptr, nullptr
-    };
-    return PyModule_Create(&ImageModuleDef);
-}
-// clang-format on
-
 Application::Application(std::map<std::string,std::string> &mConfig)
   : _mConfig(mConfig)
 {
     mpcPramManager["System parameter"] = _pcSysParamMngr;
     mpcPramManager["User parameter"] = _pcUserParamMngr;
-
-    setupPythonTypes();
 }
 
 Application::~Application() = default;
 
-void Application::setupPythonTypes()
-{
-    // setting up Python binding
-    Base::PyGILStateLocker lock;
-    PyObject* modules = PyImport_GetModuleDict();
-
-    ApplicationMethods = Application::Methods;
-    PyObject* pAppModule = PyImport_ImportModule ("FreeCAD");
-    if (!pAppModule) {
-        PyErr_Clear();
-        pAppModule = init_freecad_module();
-        PyDict_SetItemString(modules, "FreeCAD", pAppModule);
-    }
-    Py::Module(pAppModule).setAttr(std::string("ActiveDocument"),Py::None());
-
-    // clang-format off
-    static struct PyModuleDef ConsoleModuleDef = {
-        PyModuleDef_HEAD_INIT,
-        "__FreeCADConsole__", Console_doc, -1,
-        Base::ConsoleSingleton::Methods,
-        nullptr, nullptr, nullptr, nullptr
-    };
-    PyObject* pConsoleModule = PyModule_Create(&ConsoleModuleDef);
-
-    // fake Image module
-    PyObject* imageModule = init_image_module();
-    PyDict_SetItemString(modules, "Image", imageModule);
-
-    // introducing additional classes
-
-    // NOTE: To finish the initialization of our own type objects we must
-    // call PyType_Ready, otherwise we run into a segmentation fault, later on.
-    // This function is responsible for adding inherited slots from a type's base class.
-    Base::InterpreterSingleton::addType(&Base::VectorPy::Type, pAppModule, "Vector");
-    Base::InterpreterSingleton::addType(&Base::MatrixPy::Type, pAppModule, "Matrix");
-    Base::InterpreterSingleton::addType(&Base::BoundBoxPy::Type, pAppModule, "BoundBox");
-    Base::InterpreterSingleton::addType(&Base::PlacementPy::Type, pAppModule, "Placement");
-    Base::InterpreterSingleton::addType(&Base::RotationPy::Type, pAppModule, "Rotation");
-    Base::InterpreterSingleton::addType(&Base::AxisPy::Type, pAppModule, "Axis");
-
-    // Note: Create an own module 'Base' which should provide the python
-    // binding classes from the base module. At a later stage we should
-    // remove these types from the FreeCAD module.
-
-    PyObject* pBaseModule = PyImport_ImportModule ("__FreeCADBase__");
-    if (!pBaseModule) {
-        PyErr_Clear();
-        pBaseModule = init_freecad_base_module();
-        PyDict_SetItemString(modules, "__FreeCADBase__", pBaseModule);
-    }
-
-    setupPythonException(pBaseModule);
-
-
-    // Python types
-    Base::InterpreterSingleton::addType(&Base::VectorPy          ::Type,pBaseModule,"Vector");
-    Base::InterpreterSingleton::addType(&Base::MatrixPy          ::Type,pBaseModule,"Matrix");
-    Base::InterpreterSingleton::addType(&Base::BoundBoxPy        ::Type,pBaseModule,"BoundBox");
-    Base::InterpreterSingleton::addType(&Base::PlacementPy       ::Type,pBaseModule,"Placement");
-    Base::InterpreterSingleton::addType(&Base::RotationPy        ::Type,pBaseModule,"Rotation");
-    Base::InterpreterSingleton::addType(&Base::AxisPy            ::Type,pBaseModule,"Axis");
-    Base::InterpreterSingleton::addType(&Base::CoordinateSystemPy::Type,pBaseModule,"CoordinateSystem");
-    Base::InterpreterSingleton::addType(&Base::TypePy            ::Type,pBaseModule,"TypeId");
-    Base::InterpreterSingleton::addType(&Base::PrecisionPy       ::Type,pBaseModule,"Precision");
-
-    Base::InterpreterSingleton::addType(&ApplicationDirectoriesPy::Type, pAppModule, "ApplicationDirectories");
-    Base::InterpreterSingleton::addType(&MaterialPy::Type, pAppModule, "Material");
-    Base::InterpreterSingleton::addType(&MetadataPy::Type, pAppModule, "Metadata");
-
-    Base::InterpreterSingleton::addType(&MeasureManagerPy::Type, pAppModule, "MeasureManager");
-
-    Base::InterpreterSingleton::addType(&StringHasherPy::Type, pAppModule, "StringHasher");
-    Base::InterpreterSingleton::addType(&StringIDPy::Type, pAppModule, "StringID");
-
-    // Add document types
-    Base::InterpreterSingleton::addType(&PropertyContainerPy::Type, pAppModule, "PropertyContainer");
-    Base::InterpreterSingleton::addType(&ExtensionContainerPy::Type, pAppModule, "ExtensionContainer");
-    Base::InterpreterSingleton::addType(&DocumentPy::Type, pAppModule, "Document");
-    Base::InterpreterSingleton::addType(&DocumentObjectPy::Type, pAppModule, "DocumentObject");
-    Base::InterpreterSingleton::addType(&DocumentObjectGroupPy::Type, pAppModule, "DocumentObjectGroup");
-    Base::InterpreterSingleton::addType(&GeoFeaturePy::Type, pAppModule, "GeoFeature");
-
-    // Add extension types
-    Base::InterpreterSingleton::addType(&ExtensionPy::Type, pAppModule, "Extension");
-    Base::InterpreterSingleton::addType(&DocumentObjectExtensionPy::Type, pAppModule, "DocumentObjectExtension");
-    Base::InterpreterSingleton::addType(&GroupExtensionPy::Type, pAppModule, "GroupExtension");
-    Base::InterpreterSingleton::addType(&GeoFeatureGroupExtensionPy::Type, pAppModule, "GeoFeatureGroupExtension");
-    Base::InterpreterSingleton::addType(&OriginGroupExtensionPy::Type, pAppModule, "OriginGroupExtension");
-    Base::InterpreterSingleton::addType(&LinkBaseExtensionPy::Type, pAppModule, "LinkBaseExtension");
-
-    //insert Base and Console
-    Py_INCREF(pBaseModule);
-    PyModule_AddObject(pAppModule, "Base", pBaseModule);
-    Py_INCREF(pConsoleModule);
-    PyModule_AddObject(pAppModule, "Console", pConsoleModule);
-
-    // Translate module
-    PyObject* pTranslateModule = Base::Interpreter().addModule(new Base::Translate);
-    Py_INCREF(pTranslateModule);
-    PyModule_AddObject(pAppModule, "Qt", pTranslateModule);
-
-    //insert Units module
-    static struct PyModuleDef UnitsModuleDef = {
-        PyModuleDef_HEAD_INIT,
-        "Units", "The Unit API", -1,
-        Base::UnitsApi::Methods,
-        nullptr, nullptr, nullptr, nullptr
-    };
-    PyObject* pUnitsModule = PyModule_Create(&UnitsModuleDef);
-    Base::InterpreterSingleton::addType(&Base::QuantityPy  ::Type,pUnitsModule,"Quantity");
-    // make sure to set the 'nb_true_divide' slot
-    Base::InterpreterSingleton::addType(&Base::UnitPy      ::Type,pUnitsModule,"Unit");
-
-    Py_INCREF(pUnitsModule);
-    PyModule_AddObject(pAppModule, "Units", pUnitsModule);
-
-    Base::ProgressIndicatorPy::init_type();
-    Base::InterpreterSingleton::addType(Base::ProgressIndicatorPy::type_object(),
-        pBaseModule,"ProgressIndicator");
-
-    Base::Vector2dPy::init_type();
-    Base::InterpreterSingleton::addType(Base::Vector2dPy::type_object(),
-        pBaseModule,"Vector2d");
-    // clang-format on
-}
-
-/*
- * Define custom Python exception types
- */
-void Application::setupPythonException(PyObject* module)
-{
-    auto setup = [&module, str {"Base."}](const std::string& ename, auto pyExcType) {
-        auto exception = PyErr_NewException((str + ename).c_str(), pyExcType, nullptr);
-        Py_INCREF(exception);
-        PyModule_AddObject(module, ename.c_str(), exception);
-        return exception;
-    };
-
-    Base::PyExc_FC_GeneralError = setup("FreeCADError", PyExc_RuntimeError);
-    Base::PyExc_FC_FreeCADAbort = setup("FreeCADAbort", PyExc_BaseException);
-    Base::PyExc_FC_XMLBaseException = setup("XMLBaseException", PyExc_Exception);
-    Base::PyExc_FC_XMLParseException = setup("XMLParseException", Base::PyExc_FC_XMLBaseException);
-    Base::PyExc_FC_XMLAttributeError = setup("XMLAttributeError", Base::PyExc_FC_XMLBaseException);
-    Base::PyExc_FC_UnknownProgramOption = setup("UnknownProgramOption", PyExc_BaseException);
-    Base::PyExc_FC_BadFormatError = setup("BadFormatError", Base::PyExc_FC_GeneralError);
-    Base::PyExc_FC_BadGraphError = setup("BadGraphError", Base::PyExc_FC_GeneralError);
-    Base::PyExc_FC_ExpressionError = setup("ExpressionError", Base::PyExc_FC_GeneralError);
-    Base::PyExc_FC_ParserError = setup("ParserError", Base::PyExc_FC_GeneralError);
-    Base::PyExc_FC_CADKernelError = setup("CADKernelError", Base::PyExc_FC_GeneralError);
-    Base::PyExc_FC_PropertyError = setup("PropertyError", PyExc_AttributeError);
-    Base::PyExc_FC_AbortIOException = setup("AbortIOException", PyExc_BaseException);
-}
 
 //**************************************************************************
 // Interface
@@ -1044,17 +799,6 @@ void Application::setActiveDocument(Document* pDoc)
 void Application::setActiveDocumentNoSignal(Document* pDoc)
 {
     _pActiveDoc = pDoc;
-
-    // make sure that the active document is set in case no GUI is up
-    if (pDoc) {
-        Base::PyGILStateLocker lock;
-        const Py::Object active(pDoc->getPyObject(), true);
-        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), active);
-    }
-    else {
-        Base::PyGILStateLocker lock;
-        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), Py::None());
-    }
 }
 
 void Application::setActiveDocument(const char* Name)
@@ -1669,19 +1413,6 @@ char ** Application::_argv;
 
 void Application::cleanupUnits()
 {
-    try {
-        Base::PyGILStateLocker lock;
-        Py::Module mod (Py::Module("FreeCAD").getAttr("Units").ptr());
-
-        Py::List attr(mod.dir());
-        for (Py::List::iterator it = attr.begin(); it != attr.end(); ++it) {
-            mod.delAttr(Py::String(*it));
-        }
-    }
-    catch (Py::Exception& e) {
-        Base::PyGILStateLocker lock;
-        e.clear();
-    }
 }
 
 void Application::destruct()
@@ -1735,10 +1466,7 @@ void Application::destruct()
     // We must detach from console and delete the observer to save our file
     destructObserver();
 
-    Base::Interpreter().finalize();
-
     Base::ScriptFactorySingleton::Destruct();
-    Base::InterpreterSingleton::Destruct();
     Base::Type::destruct();
     ParameterManager::Terminate();
     SafeMode::Destruct();
@@ -2017,7 +1745,6 @@ void Application::initTypes()
     App::PropertyPath               ::init();
     App::PropertyFile               ::init();
     App::PropertyFileIncluded       ::init();
-    App::PropertyPythonObject       ::init();
     App::PropertyExpressionContainer::init();
     App::PropertyExpressionEngine   ::init();
     // all know unit properties
@@ -2086,17 +1813,11 @@ void Application::initTypes()
     App::ExtensionContainer            ::init();
     App::DocumentObjectExtension       ::init();
     App::GroupExtension                ::init();
-    App::GroupExtensionPython          ::init();
     App::GeoFeatureGroupExtension      ::init();
-    App::GeoFeatureGroupExtensionPython::init();
     App::OriginGroupExtension          ::init();
-    App::OriginGroupExtensionPython    ::init();
     App::LinkBaseExtension             ::init();
-    App::LinkBaseExtensionPython       ::init();
     App::LinkExtension                 ::init();
-    App::LinkExtensionPython           ::init();
     App::SuppressibleExtension         ::init();
-    App::SuppressibleExtensionPython   ::init();
 
     // Document classes
     App::TransactionalObject       ::init();
@@ -2113,11 +1834,8 @@ void Application::initTypes()
     App::FeatureTestAttribute      ::init();
 
     // Feature class
-    App::FeaturePython             ::init();
-    App::GeometryPython            ::init();
     App::Document                  ::init();
     App::DocumentObjectGroup       ::init();
-    App::DocumentObjectGroupPython ::init();
     App::DocumentObjectFileIncluded::init();
     Image::ImagePlane              ::init();
     App::InventorObject            ::init();
@@ -2125,10 +1843,8 @@ void Application::initTypes()
     App::Annotation                ::init();
     App::AnnotationLabel           ::init();
     App::MaterialObject            ::init();
-    App::MaterialObjectPython      ::init();
     App::TextDocument              ::init();
     App::Placement                 ::init();
-    App::PlacementPython           ::init();
     App::DatumElement              ::init();
     App::Plane                     ::init();
     App::Line                      ::init();
@@ -2137,11 +1853,8 @@ void Application::initTypes()
     App::Part                      ::init();
     App::Origin                    ::init();
     App::Link                      ::init();
-    App::LinkPython                ::init();
     App::LinkElement               ::init();
-    App::LinkElementPython         ::init();
     App::LinkGroup                 ::init();
-    App::LinkGroupPython           ::init();
     App::VarSet                    ::init();
 
     // Expression classes
@@ -2155,7 +1868,6 @@ void Application::initTypes()
     App::StringExpression          ::init();
     App::FunctionExpression        ::init();
     App::RangeExpression           ::init();
-    App::PyObjectExpression        ::init();
 
     // Topological naming classes
     App::StringHasher              ::init();
@@ -2400,9 +2112,7 @@ void processProgramOptions(const boost::program_options::variables_map& vm, std:
     }
 
     if (vm.contains("python-path")) {
-        auto  Paths = vm["python-path"].as< std::vector<std::string> >();
-        for (const auto & It : Paths)
-            Base::Interpreter().addPythonPath(It.c_str());
+        // Python paths are no longer used
     }
 
     if (vm.contains("disable-addon")) {
@@ -2584,45 +2294,11 @@ void Application::initConfig(int argc, char ** argv)
     mConfig["Debug"] = "0";
 #   endif
 
-    if (!Py_IsInitialized()) {
-        // init python
-        PyImport_AppendInittab ("FreeCAD", init_freecad_module);
-        PyImport_AppendInittab ("__FreeCADBase__", init_freecad_base_module);
-    }
-    else {
-        // "import FreeCAD" in a normal Python 3.12 interpreter would raise
-        //     Fatal Python error: PyImport_AppendInittab:
-        //         PyImport_AppendInittab() may not be called after Py_Initialize()
-        //  because the (external) interpreter is already initialized.
-        //  Therefore we use a workaround as described in https://stackoverflow.com/a/57019607
-
-        PyObject* sysModules = PyImport_GetModuleDict();
-
-        auto moduleName = "FreeCAD";
-        PyImport_AddModule(moduleName);
-        ApplicationMethods = Application::Methods;
-        PyObject *pyModule = init_freecad_module();
-        PyDict_SetItemString(sysModules, moduleName, pyModule);
-        Py_DECREF(pyModule);
-
-        moduleName = "__FreeCADBase__";
-        PyImport_AddModule(moduleName);
-        pyModule = init_freecad_base_module();
-        PyDict_SetItemString(sysModules, moduleName, pyModule);
-        Py_DECREF(pyModule);
-    }
-
-    std::string pythonpath = Base::Interpreter().init(argc,argv);
-    if (!pythonpath.empty())
-        mConfig["PythonSearchPath"] = pythonpath;
-    else
-        Base::Console().warning("Encoding of Python paths failed\n");
 
     // Handle the options that have impact on the init process
     processProgramOptions(vm, mConfig);
 
     // Init console ===========================================================
-    Base::PyGILStateLocker lock;
     _pConsoleObserverStd = new Base::ConsoleObserverStd();
     Base::Console().attachObserver(_pConsoleObserverStd);
     if (mConfig["LoggingConsole"] != "1") {
@@ -2713,12 +2389,6 @@ void Application::initConfig(int argc, char ** argv)
     }
 
 
-    // capture python variables
-    SaveEnv("PYTHONPATH");
-    SaveEnv("PYTHONHOME");
-    SaveEnv("TCL_LIBRARY");
-    SaveEnv("TCLLIBPATH");
-
     // capture CasCade variables
     SaveEnv("CSF_MDTVFontDirectory");
     SaveEnv("CSF_MDTVTexturesDirectory");
@@ -2741,7 +2411,6 @@ void Application::initConfig(int argc, char ** argv)
     mConfig["OCC_VERSION"] = OCC_VERSION_STRING_EXT;
 #endif
     mConfig["BOOST_VERSION"] = BOOST_LIB_VERSION;
-    mConfig["PYTHON_VERSION"] = PY_VERSION;
     mConfig["QT_VERSION"] = QT_VERSION_STR;
     mConfig["EIGEN_VERSION"] = fcEigen3Version;
     mConfig["PYSIDE_VERSION"] = fcPysideVersion;
@@ -2771,8 +2440,6 @@ void Application::initApplication()
     // interpreter and Init script ==========================================================
     // register scripts
     new Base::ScriptProducer( "CMakeVariables", CMakeVariables );
-    new Base::ScriptProducer( "FreeCADInit",    FreeCADInit    );
-    new Base::ScriptProducer( "FreeCADTest",    FreeCADTest    );
 
     // creating the application
     if (mConfig["Verbose"] != "Strict")
@@ -2790,15 +2457,6 @@ void Application::initApplication()
     Base::Console().log("Application is built with debug information\n");
 #endif
 
-    // starting the init script
-    Base::Console().log("Run App init script\n");
-    try {
-        Base::Interpreter().runString(Base::ScriptFactory().ProduceScript("CMakeVariables"));
-        Base::Interpreter().runString(Base::ScriptFactory().ProduceScript("FreeCADInit"));
-    }
-    catch (const Base::Exception& e) {
-        e.reportException();
-    }
 
     // seed randomizer
     srand(time(nullptr));
@@ -2838,43 +2496,16 @@ std::list<std::string> Application::processFiles(const std::list<std::string>& f
                 Application::_pcSingleton->openDocument(file.filePath().c_str());
                 processed.push_back(it);
             }
-            else if (file.hasExtension("fcscript") || file.hasExtension("fcmacro")) {
-                Base::Interpreter().runFile(file.filePath().c_str(), true);
-                processed.push_back(it);
-            }
-            else if (file.hasExtension("py")) {
-                try {
-                    Base::Interpreter().addPythonPath(file.dirPath().c_str());
-                    Base::Interpreter().loadModule(file.fileNamePure().c_str());
-                    processed.push_back(it);
-                }
-                catch (const Base::PyException&) {
-                    // if loading the module does not work, try just running the script (run in __main__)
-                    Base::Interpreter().runFile(file.filePath().c_str(),true);
-                    processed.push_back(it);
-                }
-            }
             else {
                 std::string ext = file.extension();
                 std::vector<std::string> mods = GetApplication().getImportModules(ext.c_str());
                 if (!mods.empty()) {
-                    std::string escapedstr = Base::Tools::escapedUnicodeFromUtf8(file.filePath().c_str());
-                    escapedstr = Base::Tools::escapeEncodeFilename(escapedstr);
-
-                    Base::Interpreter().loadModule(mods.front().c_str());
-                    Base::Interpreter().runStringArg("import %s",mods.front().c_str());
-                    Base::Interpreter().runStringArg("%s.open(u\"%s\")",mods.front().c_str(),
-                            escapedstr.c_str());
                     processed.push_back(it);
-                    Base::Console().log("Command line open: %s.open(u\"%s\")\n",mods.front().c_str(),escapedstr.c_str());
                 }
                 else if (file.exists()) {
                     Base::Console().warning("File format not supported: %s \n", file.filePath().c_str());
                 }
             }
-        }
-        catch (const Base::SystemExitException&) {
-            throw; // re-throw to main() function
         }
         catch (const Base::Exception& e) {
             Base::Console().error("Exception while processing file: %s [%s]\n", file.filePath().c_str(), e.what());
@@ -2898,11 +2529,8 @@ void Application::processCmdLineFiles()
             mConfig["RunMode"] = "Cmd";
     }
     else if (processed.empty() && files.size() == 1 && mConfig["RunMode"] == "Cmd") {
-        // In case we are in console mode and the argument is not a file but Python code
-        // then execute it. This is to behave like the standard Python executable.
         const Base::FileInfo file(files.front());
         if (!file.exists()) {
-            Base::Interpreter().runString(files.front().c_str());
             mConfig["RunMode"] = "Exit";
         }
     }
@@ -2917,13 +2545,7 @@ void Application::processCmdLineFiles()
         const std::string ext = fi.extension();
         try {
             const std::vector<std::string> mods = GetApplication().getExportModules(ext.c_str());
-            if (!mods.empty()) {
-                Base::Interpreter().loadModule(mods.front().c_str());
-                Base::Interpreter().runStringArg("import %s",mods.front().c_str());
-                Base::Interpreter().runStringArg("%s.export(App.ActiveDocument.Objects, '%s')"
-                    ,mods.front().c_str(),output.c_str());
-            }
-            else {
+            if (mods.empty()) {
                 Base::Console().warning("File format not supported: %s \n", output.c_str());
             }
         }
@@ -2942,13 +2564,12 @@ void Application::runApplication()
     processCmdLineFiles();
 
     if (mConfig["RunMode"] == "Cmd") {
-        // Run the commandline interface
-        Base::Interpreter().runCommandLine("FreeCAD Console mode");
+        // Console mode - no Python interpreter available
+        Base::Console().log("FreeCAD Console mode (no Python)\n");
     }
     else if (mConfig["RunMode"] == "Internal") {
-        // run internal script
-        Base::Console().log("Running internal script:\n");
-        Base::Interpreter().runString(Base::ScriptFactory().ProduceScript(mConfig["ScriptFileName"].c_str()));
+        // Internal scripts no longer supported without Python
+        Base::Console().log("Internal script mode not available without Python\n");
     }
     else if (mConfig["RunMode"] == "Exit") {
         // getting out
@@ -2989,7 +2610,7 @@ void Application::LoadParameters()
     try {
         if (_pcSysParamMngr->LoadOrCreateDocument() && mConfig["Verbose"] != "Strict") {
             // Configuration file optional when using as Python module
-            if (!Py_IsInitialized()) {
+            if (!false) {
                 Base::Console().warning("   Parameter does not exist, writing initial one\n");
                 Base::Console().message("   This warning normally means that FreeCAD is running for the first time\n"
                                   "   or the configuration was deleted or moved. FreeCAD is generating the standard\n"
@@ -3023,7 +2644,7 @@ void Application::LoadParameters()
             }
 
             // Configuration file optional when using as Python module
-            if (!Py_IsInitialized()) {
+            if (!false) {
                 Base::Console().warning("   User settings do not exist, writing initial one\n");
                 Base::Console().message("   This warning normally means that FreeCAD is running for the first time\n"
                                   "   or your configuration was deleted or moved. The system defaults\n"
@@ -3177,7 +2798,7 @@ std::filesystem::path findPath(const QString& stdHome, const QString& customHome
     }
 
     // In order to write to our data path, we must create some directories, first.
-    if (create && !std::filesystem::exists(appData) && !Py_IsInitialized()) {
+    if (create && !std::filesystem::exists(appData) && !false) {
         try {
             std::filesystem::create_directories(appData);
         } catch (const std::filesystem::filesystem_error& e) {
@@ -3359,7 +2980,7 @@ std::string Application::FindHomePath(const char* sCall)
     // Python interpreter is already initialized.
     std::string absPath;
     std::string homePath;
-    if (Py_IsInitialized()) {
+    if (false) {
         // Note: realpath is known to cause a buffer overflow because it
         // expands the given path to an absolute path of unknown length.
         // Even setting PATH_MAX does not necessarily solve the problem
@@ -3396,7 +3017,7 @@ std::string Application::FindHomePath(const char* sCall)
     // Python interpreter is already initialized.
     std::string absPath;
     std::string homePath;
-    if (Py_IsInitialized()) {
+    if (false) {
         // Note: realpath is known to cause a buffer overflow because it
         // expands the given path to an absolute path of unknown length.
         // Even setting PATH_MAX does not necessarily solve the problem
@@ -3451,7 +3072,7 @@ std::string Application::FindHomePath(const char* sCall)
     // If Python is initialized at this point, then we're being run from
     // MainPy.cpp, which hopefully rewrote argv[0] to point at the
     // FreeCAD shared library.
-    if (!Py_IsInitialized()) {
+    if (!false) {
         uint32_t sz = 0;
 
         // function only returns "sz" if first arg is to small to hold value
@@ -3491,7 +3112,7 @@ std::string Application::FindHomePath(const char* sCall)
     //   to locate the correct home directory
     wchar_t szFileName [MAX_PATH];
     QString dll(QString::fromUtf8(sCall));
-    if (Py_IsInitialized() || dll.endsWith(QLatin1String(".dll"))) {
+    if (false || dll.endsWith(QLatin1String(".dll"))) {
         GetModuleFileNameW(GetModuleHandleA(sCall),szFileName, MAX_PATH-1);
     }
     else {
@@ -3698,7 +3319,6 @@ void Application::getVerboseCommonInfo(QTextStream& str, const std::map<std::str
         str << "Hash: " << buildRevisionHash << '\n';
     }
     // report also the version numbers of the most important libraries in FreeCAD
-    str << "Python " << PY_VERSION << ", ";
     str << "Qt " << QT_VERSION_STR << ", ";
     str << "Coin " << fcCoin3dVersion << ", ";
     str << "Vtk " << fcVtkVersion << ", ";
@@ -3711,25 +3331,6 @@ void Application::getVerboseCommonInfo(QTextStream& str, const std::map<std::str
 #endif
     str << "xerces-c " << fcXercescVersion << ", ";
 
-    const char* cmd = "import ifcopenshell\n"
-                  "version = ifcopenshell.version";
-    PyObject * ifcopenshellVer = nullptr;
-
-    try {
-        ifcopenshellVer = Base::Interpreter().getValue(cmd, "version");
-    }
-    catch (const Base::Exception& e) {
-        Base::Console().log("%s (safe to ignore, unless using the BIM workbench and IFC).\n", e.what());
-    }
-
-    if (ifcopenshellVer) {
-        const char* ifcopenshellVerAsStr = PyUnicode_AsUTF8(ifcopenshellVer);
-
-        if (ifcopenshellVerAsStr) {
-            str << "IfcOpenShell " << ifcopenshellVerAsStr << ", ";
-        }
-        Py_DECREF(ifcopenshellVer);
-    }
 
 #if defined(HAVE_OCC_VERSION)
     str << "OCC " << OCC_VERSION_MAJOR << "." << OCC_VERSION_MINOR << "." << OCC_VERSION_MAINTENANCE

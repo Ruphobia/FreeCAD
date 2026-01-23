@@ -88,56 +88,10 @@ list(APPEND FreeCADApp_LIBS
         ${QtXml_LIBRARIES}
 )
 
-generate_from_py(ApplicationDirectories)
-generate_from_py(Document)
-generate_from_py(DocumentObject)
-generate_from_py(Extension)
-generate_from_py(ExtensionContainer)
-generate_from_py(DocumentObjectExtension)
-generate_from_py(GroupExtension)
-generate_from_py(LinkBaseExtension)
-generate_from_py(DocumentObjectGroup)
-generate_from_py(GeoFeature)
-generate_from_py(GeoFeatureGroupExtension)
-generate_from_py(SuppressibleExtension)
-generate_from_py(Metadata)
-generate_from_py(OriginGroupExtension)
-generate_from_py(Part)
-generate_from_py(StringHasher)
-generate_from_py(StringID)
+# Strip: Python generate_from_py removed
 
-generate_from_py(ComplexGeoData)
-generate_from_py(PropertyContainer)
-generate_from_py(Material)
-generate_from_py(MeasureManager)
-
-generate_embed_from_py(FreeCADInit InitScript.h)
-generate_embed_from_py(FreeCADTest TestScript.h)
-
-SET(FreeCADApp_Pyi_SRCS
-    ApplicationDirectories.pyi
-    Extension.pyi
-    ExtensionContainer.pyi
-    DocumentObjectExtension.pyi
-    GroupExtension.pyi
-    LinkBaseExtension.pyi
-    Metadata.pyi
-    DocumentObjectGroup.pyi
-    DocumentObject.pyi
-    GeoFeature.pyi
-    GeoFeatureGroupExtension.pyi
-    OriginGroupExtension.pyi
-    SuppressibleExtension.pyi
-    Part.pyi
-    Document.pyi
-    PropertyContainer.pyi
-    ComplexGeoData.pyi
-    Material.pyi
-    MeasureManager.pyi
-    StringHasher.pyi
-    StringID.pyi
-)
-SOURCE_GROUP("Pyi" FILES ${FreeCADApp_Pyi_SRCS})
+# Strip: Python .pyi files removed
+SET(FreeCADApp_Pyi_SRCS)
 
 # The document stuff
 SET(Document_CPP_SRCS
@@ -146,35 +100,21 @@ SET(Document_CPP_SRCS
     Document.cpp
     DocumentObject.cpp
     Extension.cpp
-    ExtensionPyImp.cpp
     DocumentObjectExtension.cpp
-    DocumentObjectExtensionPyImp.cpp
     ExtensionContainer.cpp
-    ExtensionContainerPyImp.cpp
     Graphviz.cpp
     GroupExtension.cpp
-    GroupExtensionPyImp.cpp
     DocumentObjectFileIncluded.cpp
     DocumentObjectGroup.cpp
-    DocumentObjectGroupPyImp.cpp
-    GeoFeaturePyImp.cpp
-    DocumentObjectPyImp.cpp
     DocumentObserver.cpp
-    DocumentObserverPython.cpp
-    DocumentPyImp.cpp
     Expression.cpp
     ExpressionTokenizer.cpp
-    FeaturePython.cpp
     FeatureTest.cpp
     GeoFeature.cpp
-    GeoFeatureGroupExtensionPyImp.cpp
     GeoFeatureGroupExtension.cpp
     ImagePlane.cpp
-    OriginGroupExtensionPyImp.cpp
     OriginGroupExtension.cpp
-    SuppressibleExtensionPyImp.cpp
     SuppressibleExtension.cpp
-    PartPyImp.cpp
     Part.cpp
     Origin.cpp
     Path.cpp
@@ -190,7 +130,6 @@ SET(Document_CPP_SRCS
     MergeDocuments.cpp
     TextDocument.cpp
     Link.cpp
-    LinkBaseExtensionPyImp.cpp
     VarSet.cpp
     License.h
 )
@@ -207,15 +146,11 @@ SET(Document_HPP_SRCS
     DocumentObjectFileIncluded.h
     DocumentObjectGroup.h
     DocumentObserver.h
-    DocumentObserverPython.h
     Expression.h
     ExpressionParser.h
     ExpressionTokenizer.h
     ExpressionVisitors.h
     FeatureCustom.h
-    FeaturePython.h
-    FeaturePythonPyImp.h
-    FeaturePythonPyImp.inl
     FeatureTest.h
     GeoFeature.h
     GeoFeatureGroupExtension.h
@@ -251,11 +186,9 @@ SET(Properties_CPP_SRCS
     ObjectIdentifier.cpp
     Property.cpp
     PropertyContainer.cpp
-    PropertyContainerPyImp.cpp
     PropertyFile.cpp
     PropertyGeo.cpp
     PropertyLinks.cpp
-    PropertyPythonObject.cpp
     PropertyStandard.cpp
     PropertyUnits.cpp
     PropertyExpressionEngine.cpp
@@ -268,7 +201,6 @@ SET(Properties_HPP_SRCS
     PropertyFile.h
     PropertyGeo.h
     PropertyLinks.h
-    PropertyPythonObject.h
     PropertyStandard.h
     PropertyUnits.h
     PropertyExpressionEngine.h
@@ -285,31 +217,23 @@ SET(FreeCADApp_CPP_SRCS
     ${Properties_CPP_SRCS}
     Application.cpp
     ApplicationDirectories.cpp
-    ApplicationDirectoriesPyImp.cpp
-    ApplicationPy.cpp
     AutoTransaction.cpp
     Branding.cpp
     CleanupProcess.cpp
     ColorModel.cpp
     ComplexGeoData.cpp
-    ComplexGeoDataPyImp.cpp
     ElementMap.cpp
     Enumeration.cpp
     IndexedName.cpp
     MappedElement.cpp
     MappedName.cpp
     Material.cpp
-    MaterialPyImp.cpp
     MeasureManager.cpp
-    MeasureManagerPyImp.cpp
     Metadata.cpp
-    MetadataPyImp.cpp
     ElementNamingUtils.cpp
     SafeMode.cpp
     Services.cpp
     StringHasher.cpp
-    StringHasherPyImp.cpp
-    StringIDPyImp.cpp
 )
 
 SET(FreeCADApp_HPP_SRCS
@@ -346,9 +270,6 @@ SET(FreeCADApp_SRCS
     ${FreeCADApp_QRC_SRCS}
     ${FreeCADApp_CPP_SRCS}
     ${FreeCADApp_HPP_SRCS}
-    ${FreeCADApp_Pyi_SRCS}
-    FreeCADInit.py
-    FreeCADTest.py
     PreCompiled.h
 )
 

@@ -217,7 +217,6 @@ public:
     // GeoFeatureGroupExtension overrides:
     bool extensionGetSubObject(DocumentObject*& ret,
         const char* subname,
-        PyObject**,
         Base::Matrix4D*,
         bool,
         int) const override;

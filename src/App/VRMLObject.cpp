@@ -24,7 +24,6 @@
 
 #include "VRMLObject.h"
 #include "Document.h"
-#include "DocumentObjectPy.h"
 #include <Base/FileInfo.h>
 #include <Base/Reader.h>
 #include <Base/Stream.h>
@@ -87,14 +86,6 @@ void VRMLObject::onChanged(const App::Property* prop)
     GeoFeature::onChanged(prop);
 }
 
-PyObject* VRMLObject::getPyObject()
-{
-    if (PythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        PythonObject = Py::Object(new DocumentObjectPy(this), true);
-    }
-    return Py::new_reference_to(PythonObject);
-}
 
 std::string VRMLObject::getRelativePath(const std::string& prefix,
                                         const std::string& resource) const

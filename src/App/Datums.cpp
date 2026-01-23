@@ -363,7 +363,6 @@ void LocalCoordinateSystem::migrateOriginPoint()
 
 bool LocalCoordinateSystem::extensionGetSubObject(DocumentObject*& ret,
                                                                 const char* subname,
-                                                                PyObject** pyobj,
                                                                 Base::Matrix4D* mat,
                                                                 bool,
                                                                 int depth) const
@@ -401,7 +400,7 @@ bool LocalCoordinateSystem::extensionGetSubObject(DocumentObject*& ret,
         else {
             subname = "";
         }
-        ret = ret->getSubObject(subname, pyobj, mat, true, depth + 1);
+        ret = ret->getSubObject(subname, mat, true, depth + 1);
         return true;
     }
     catch (const Base::Exception& e) {

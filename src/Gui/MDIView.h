@@ -89,7 +89,6 @@ public:
     bool canClose() override;
     /// delete itself
     void deleteSelf() override;
-    PyObject* getPyObject() override;
     /** @name Printing */
     //@{
 public Q_SLOTS:

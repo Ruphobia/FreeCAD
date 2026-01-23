@@ -33,12 +33,10 @@
 
 #include "Application.h"
 #include "ElementNamingUtils.h"
-#include "ComplexGeoDataPy.h"
 #include "Document.h"
 #include "DocumentObserver.h"
 #include "GeoFeatureGroupExtension.h"
 #include "Link.h"
-#include "LinkBaseExtensionPy.h"
 
 // FIXME: ISO C++11 requires at least one argument for the "..." in a variadic macro
 #if defined(__clang__)
@@ -189,14 +187,6 @@ LinkBaseExtension::LinkBaseExtension()
     props.resize(PropMax, nullptr);
 }
 
-PyObject* LinkBaseExtension::getExtensionPyObject()
-{
-    if (ExtensionPythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        ExtensionPythonObject = Py::Object(new LinkBaseExtensionPy(this), true);
-    }
-    return Py::new_reference_to(ExtensionPythonObject);
-}
 
 const std::vector<LinkBaseExtension::PropInfo>& LinkBaseExtension::getPropertyInfo() const
 {
@@ -376,61 +366,6 @@ App::DocumentObjectExecReturn* LinkBaseExtension::extensionExecute()
         linked = getTrueLinkedObject(true);
         if (!linked) {
             return new App::DocumentObjectExecReturn("Error in processing variable link");
-        }
-
-        PropertyPythonObject* proxy = nullptr;
-        if (getLinkExecuteProperty() && !boost::iequals(getLinkExecuteValue(), "none")
-            && (!_LinkOwner.getValue()
-                || !container->getDocument()->getObjectByID(_LinkOwner.getValue()))) {
-            // Check if this is an element link. Do not invoke appLinkExecute()
-            // if so, because it will be called from the link array.
-            proxy = freecad_cast<PropertyPythonObject*>(
-                linked->getPropertyByName("Proxy"));
-        }
-        if (proxy) {
-            Base::PyGILStateLocker lock;
-            const char* errMsg = "Linked proxy execute failed";
-            try {
-                Py::Tuple args(3);
-                Py::Object proxyValue = proxy->getValue();
-                const char* method = getLinkExecuteValue();
-                if (!method || !method[0]) {
-                    method = "appLinkExecute";
-                }
-                if (proxyValue.hasAttr(method)) {
-                    Py::Object attr = proxyValue.getAttr(method);
-                    if (attr.ptr() && attr.isCallable()) {
-                        Py::Tuple args(4);
-                        args.setItem(0, Py::asObject(linked->getPyObject()));
-                        args.setItem(1, Py::asObject(container->getPyObject()));
-                        if (!_getElementCountValue()) {
-                            Py::Callable(attr).apply(args);
-                        }
-                        else {
-                            const auto& elements = _getElementListValue();
-                            for (int i = 0; i < _getElementCountValue(); ++i) {
-                                args.setItem(2, Py::Long(i));
-                                if (i < (int)elements.size()) {
-                                    args.setItem(3, Py::asObject(elements[i]->getPyObject()));
-                                }
-                                else {
-                                    args.setItem(3, Py::Object());
-                                }
-                                Py::Callable(attr).apply(args);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Py::Exception&) {
-                Base::PyException e;
-                e.reportException();
-                return new App::DocumentObjectExecReturn(errMsg);
-            }
-            catch (Base::Exception& e) {
-                e.reportException();
-                return new App::DocumentObjectExecReturn(errMsg);
-            }
         }
 
         auto parent = getContainer();
@@ -1450,7 +1385,6 @@ bool LinkBaseExtension::extensionGetSubObjects(std::vector<std::string>& ret, in
 
 bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
                                               const char* subname,
-                                              PyObject** pyObj,
                                               Base::Matrix4D* mat,
                                               bool transform,
                                               int depth) const
@@ -1480,7 +1414,7 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
             _mat = *mat;
         }
 
-        if (pyObj && !_getElementCountValue() && _getElementListValue().empty()
+        if (!_getElementCountValue() && _getElementListValue().empty()
             && mySubElements.size() <= 1) {
             // Scale will be included here
             if (getScaleProperty() || getScaleVectorProperty()) {
@@ -1492,11 +1426,10 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
             if (linked && linked != obj) {
                 linked->getSubObject(mySubElements.empty() ? nullptr
                                                            : mySubElements.front().c_str(),
-                                     pyObj,
                                      &_mat,
                                      false,
                                      depth + 1);
-                checkGeoElementMap(obj, linked, pyObj, nullptr);
+                checkGeoElementMap(obj, linked, nullptr);
             }
         }
         return true;
@@ -1516,7 +1449,7 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
                 || !elements[idx]->isAttachedToDocument()) {
                 return true;
             }
-            ret = elements[idx]->getSubObject(subname, pyObj, mat, true, depth + 1);
+            ret = elements[idx]->getSubObject(subname, mat, true, depth + 1);
             // do not resolve the link if this element is the last referenced object
             if (!subname || Data::isMappedElement(subname) || !strchr(subname, '.')) {
                 ret = elements[idx];
@@ -1583,7 +1516,7 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
             if (mat) {
                 matNext = *mat;
             }
-            ret = linked->getSubObject(dot + 1, pyObj, mat ? &matNext : nullptr, false, depth + 1);
+            ret = linked->getSubObject(dot + 1, mat ? &matNext : nullptr, false, depth + 1);
             if (ret && dot[1]) {
                 subname = dot + 1;
             }
@@ -1594,7 +1527,7 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
         if (mat) {
             matNext = *mat;
         }
-        ret = linked->getSubObject(subname, pyObj, mat ? &matNext : nullptr, false, depth + 1);
+        ret = linked->getSubObject(subname, mat ? &matNext : nullptr, false, depth + 1);
     }
 
     std::string postfix;
@@ -1622,36 +1555,17 @@ bool LinkBaseExtension::extensionGetSubObject(DocumentObject*& ret,
             }
         }
     }
-    checkGeoElementMap(obj, linked, pyObj, !postfix.empty() ? postfix.c_str() : nullptr);
+    checkGeoElementMap(obj, linked, !postfix.empty() ? postfix.c_str() : nullptr);
     return true;
 }
 
 void LinkBaseExtension::checkGeoElementMap(const App::DocumentObject* obj,
                                            const App::DocumentObject* linked,
-                                           PyObject** pyObj,
                                            const char* postfix) const
 {
-    if (!pyObj || !*pyObj || (!postfix && obj->getDocument() == linked->getDocument())
-        || !PyObject_TypeCheck(*pyObj, &Data::ComplexGeoDataPy::Type)) {
-        return;
-    }
-
-    //     auto geoData = static_cast<Data::ComplexGeoDataPy*>(*pyObj)->getComplexGeoDataPtr();
-    //     geoData->reTagElementMap(obj->getID(),obj->getDocument()->Hasher,postfix);
-
-    auto geoData = static_cast<Data::ComplexGeoDataPy*>(*pyObj)->getComplexGeoDataPtr();
-    std::string _postfix;
-    if (linked && obj && linked->getDocument() != obj->getDocument()) {
-        _postfix = Data::POSTFIX_EXTERNAL_TAG;
-        if (postfix) {
-            if (!boost::starts_with(postfix, Data::ComplexGeoData::elementMapPrefix())) {
-                _postfix += Data::ComplexGeoData::elementMapPrefix();
-            }
-            _postfix += postfix;
-        }
-        postfix = _postfix.c_str();
-    }
-    geoData->reTagElementMap(obj->getID(), obj->getDocument()->getStringHasher(), postfix);
+    (void)obj;
+    (void)linked;
+    (void)postfix;
 }
 
 void LinkBaseExtension::onExtendedUnsetupObject()
@@ -1684,7 +1598,7 @@ DocumentObject* LinkBaseExtension::getTrueLinkedObject(bool recurse,
     bool transform = linkTransform();
     const char* subname = getSubName();
     if (subname || (mat && transform)) {
-        ret = ret->getSubObject(subname, nullptr, mat, transform, depth + 1);
+        ret = ret->getSubObject(subname, mat, transform, depth + 1);
         transform = false;
     }
     if (ret && recurse) {
@@ -2587,10 +2501,8 @@ bool LinkBaseExtension::isLinkMutated() const
 
 namespace App
 {
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::LinkBaseExtensionPython, App::LinkBaseExtension)
 
 // explicit template instantiation
-template class AppExport ExtensionPythonT<LinkBaseExtension>;
 
 }  // namespace App
 
@@ -2609,10 +2521,8 @@ LinkExtension::LinkExtension()
 
 namespace App
 {
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::LinkExtensionPython, App::LinkExtension)
 
 // explicit template instantiation
-template class AppExport ExtensionPythonT<App::LinkExtension>;
 
 }  // namespace App
 
@@ -2714,18 +2624,6 @@ bool Link::isLinkGroup() const
     return ElementCount.getValue() > 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-namespace App
-{
-PROPERTY_SOURCE_TEMPLATE(App::LinkPython, App::Link)
-template<>
-const char* App::LinkPython::getViewProviderName() const
-{
-    return "Gui::ViewProviderLinkPython";
-}
-template class AppExport FeaturePythonT<App::Link>;
-}  // namespace App
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2799,18 +2697,6 @@ Base::Placement LinkElement::getPlacementOf(const std::string& sub, DocumentObje
     return plc * subObj->getPlacementOf(newSub, targetObj);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-namespace App
-{
-PROPERTY_SOURCE_TEMPLATE(App::LinkElementPython, App::LinkElement)
-template<>
-const char* App::LinkElementPython::getViewProviderName() const
-{
-    return "Gui::ViewProviderLinkPython";
-}
-template class AppExport FeaturePythonT<App::LinkElement>;
-}  // namespace App
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2822,18 +2708,6 @@ LinkGroup::LinkGroup()
     LinkBaseExtension::initExtension(this);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-namespace App
-{
-PROPERTY_SOURCE_TEMPLATE(App::LinkGroupPython, App::LinkGroup)
-template<>
-const char* App::LinkGroupPython::getViewProviderName() const
-{
-    return "Gui::ViewProviderLinkPython";
-}
-template class AppExport FeaturePythonT<App::LinkGroup>;
-}  // namespace App
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

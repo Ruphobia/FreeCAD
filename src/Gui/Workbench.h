@@ -67,10 +67,6 @@ public:
      * Set the name to the workbench object.
      */
     void setName(const std::string&);
-    /**
-     * The default implementation returns an instance of @ref WorkbenchPy.
-     */
-    PyObject* getPyObject() override;
     /** Sets up the contextmenu for this workbench.
      */
     void createContextMenu(const char* recipient, MenuItem*) const;
@@ -257,11 +253,6 @@ class GuiExport PythonBaseWorkbench: public Workbench
 public:
     PythonBaseWorkbench();
     ~PythonBaseWorkbench() override;
-    /**
-     * Creates and returns immediately the corresponding Python workbench object.
-     */
-    PyObject* getPyObject() override;
-
     /** @name Manipulation methods */
     //@{
     /// Appends a new menu

@@ -22,17 +22,12 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <Base/MatrixPy.h>
-#include <Base/PlacementPy.h>
 #include <Base/Reader.h>
 
 #include <Base/Quantity.h>
-#include <Base/QuantityPy.h>
 #include <Base/Rotation.h>
-#include <Base/RotationPy.h>
 #include <Base/Stream.h>
 #include <Base/Tools.h>
-#include <Base/VectorPy.h>
 #include <Base/Writer.h>
 
 #include "ComplexGeoData.h"
@@ -84,62 +79,7 @@ const Base::Vector3d& PropertyVector::getValue() const
     return _cVec;
 }
 
-PyObject* PropertyVector::getPyObject()
-{
-    return new Base::VectorPy(_cVec);
-}
 
-void PropertyVector::setPyObject(PyObject* value)
-{
-    if (PyObject_TypeCheck(value, &(Base::VectorPy::Type))) {
-        Base::VectorPy* pcObject = static_cast<Base::VectorPy*>(value);
-        Base::Vector3d* val = pcObject->getVectorPtr();
-        setValue(*val);
-    }
-    else if (PyTuple_Check(value) && PyTuple_Size(value) == 3) {
-        PyObject* item {};
-        Base::Vector3d cVec;
-        // x
-        item = PyTuple_GetItem(value, 0);
-        if (PyFloat_Check(item)) {
-            cVec.x = PyFloat_AsDouble(item);
-        }
-        else if (PyLong_Check(item)) {
-            cVec.x = (double)PyLong_AsLong(item);
-        }
-        else {
-            throw Base::TypeError("Not allowed type used in tuple (float expected)...");
-        }
-        // y
-        item = PyTuple_GetItem(value, 1);
-        if (PyFloat_Check(item)) {
-            cVec.y = PyFloat_AsDouble(item);
-        }
-        else if (PyLong_Check(item)) {
-            cVec.y = (double)PyLong_AsLong(item);
-        }
-        else {
-            throw Base::TypeError("Not allowed type used in tuple (float expected)...");
-        }
-        // z
-        item = PyTuple_GetItem(value, 2);
-        if (PyFloat_Check(item)) {
-            cVec.z = PyFloat_AsDouble(item);
-        }
-        else if (PyLong_Check(item)) {
-            cVec.z = (double)PyLong_AsLong(item);
-        }
-        else {
-            throw Base::TypeError("Not allowed type used in tuple (float expected)...");
-        }
-        setValue(cVec);
-    }
-    else {
-        std::string error = std::string("type must be 'Vector' or tuple of three floats, not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
-    }
-}
 
 void PropertyVector::Save(Base::Writer& writer) const
 {
@@ -203,28 +143,6 @@ const boost::any PropertyVector::getPathValue(const ObjectIdentifier& path) cons
     return Property::getPathValue(path);
 }
 
-bool PropertyVector::getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const
-{
-    Base::Unit unit = getUnit();
-    if (unit == Unit::One) {
-        return false;
-    }
-
-    std::string p = path.getSubPathStr();
-    if (p == ".x") {
-        res = Py::asObject(new QuantityPy(new Quantity(getValue().x, unit)));
-    }
-    else if (p == ".y") {
-        res = Py::asObject(new QuantityPy(new Quantity(getValue().y, unit)));
-    }
-    else if (p == ".z") {
-        res = Py::asObject(new QuantityPy(new Quantity(getValue().z, unit)));
-    }
-    else {
-        return false;
-    }
-    return true;
-}
 
 
 //**************************************************************************
@@ -290,23 +208,7 @@ void PropertyVectorList::setValue(double x, double y, double z)
     setValue(Base::Vector3d(x, y, z));
 }
 
-PyObject* PropertyVectorList::getPyObject()
-{
-    PyObject* list = PyList_New(getSize());
 
-    for (int i = 0; i < getSize(); i++) {
-        PyList_SetItem(list, i, new VectorPy(_lValueList[i]));
-    }
-
-    return list;
-}
-
-Base::Vector3d PropertyVectorList::getPyValue(PyObject* item) const
-{
-    PropertyVector val;
-    val.setPyObject(item);
-    return val.getValue();
-}
 
 void PropertyVectorList::Save(Base::Writer& writer) const
 {
@@ -418,46 +320,6 @@ const Base::Matrix4D& PropertyMatrix::getValue() const
     return _cMat;
 }
 
-PyObject* PropertyMatrix::getPyObject()
-{
-    return new Base::MatrixPy(_cMat);
-}
-
-void PropertyMatrix::setPyObject(PyObject* value)
-{
-    if (PyObject_TypeCheck(value, &(Base::MatrixPy::Type))) {
-        Base::MatrixPy* pcObject = static_cast<Base::MatrixPy*>(value);
-        setValue(pcObject->value());
-    }
-    else if (PyTuple_Check(value) && PyTuple_Size(value) == 16) {
-        PyObject* item;
-        Base::Matrix4D cMatrix;
-
-        const int dim = 4;
-        for (int x = 0; x < dim; x++) {
-            for (int y = 0; y < dim; y++) {
-                item = PyTuple_GetItem(value, x + y * dim);
-                if (PyFloat_Check(item)) {
-                    cMatrix[x][y] = PyFloat_AsDouble(item);
-                }
-                else if (PyLong_Check(item)) {
-                    cMatrix[x][y] = (double)PyLong_AsLong(item);
-                }
-                else {
-                    throw Base::TypeError(
-                        "Not allowed type used in matrix tuple (a number expected)...");
-                }
-            }
-        }
-
-        setValue(cMatrix);
-    }
-    else {
-        std::string error = std::string("type must be 'Matrix' or tuple of 16 float or int, not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
-    }
-}
 
 void PropertyMatrix::Save(Base::Writer& writer) const
 {
@@ -744,95 +606,6 @@ const boost::any PropertyPlacement::getPathValue(const ObjectIdentifier& path) c
     }
 }
 
-bool PropertyPlacement::getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const
-{
-    auto getAxis = [](const Base::Placement& plm) {
-        Base::Vector3d axis;
-        double angle;
-        const Base::Rotation& rot = plm.getRotation();
-        rot.getRawValue(axis, angle);
-        return axis;
-    };
-
-    auto getYawPitchRoll = [](const Base::Placement& plm) {
-        Base::Vector3d ypr;
-        const Base::Rotation& rot = plm.getRotation();
-        rot.getYawPitchRoll(ypr.x, ypr.y, ypr.z);
-        return ypr;
-    };
-
-    std::string p = path.getSubPathStr();
-    if (p == ".Rotation.Angle") {
-        Base::Vector3d axis;
-        double angle;
-        _cPos.getRotation().getValue(axis, angle);
-        res = Py::asObject(new QuantityPy(new Quantity(Base::toDegrees(angle), Unit::Angle)));
-        return true;
-    }
-    else if (p == ".Base.x") {
-        res = Py::asObject(new QuantityPy(new Quantity(_cPos.getPosition().x, Unit::Length)));
-        return true;
-    }
-    else if (p == ".Base.y") {
-        res = Py::asObject(new QuantityPy(new Quantity(_cPos.getPosition().y, Unit::Length)));
-        return true;
-    }
-    else if (p == ".Base.z") {
-        res = Py::asObject(new QuantityPy(new Quantity(_cPos.getPosition().z, Unit::Length)));
-        return true;
-    }
-    else if (p == ".Rotation.Axis.x") {
-        res = Py::Float(getAxis(_cPos).x);
-        return true;
-    }
-    else if (p == ".Rotation.Axis.y") {
-        res = Py::Float(getAxis(_cPos).y);
-        return true;
-    }
-    else if (p == ".Rotation.Axis.z") {
-        res = Py::Float(getAxis(_cPos).z);
-        return true;
-    }
-    else if (p == ".Rotation.Yaw") {
-        res = Py::Float(getYawPitchRoll(_cPos).x);
-        return true;
-    }
-    else if (p == ".Rotation.Pitch") {
-        res = Py::Float(getYawPitchRoll(_cPos).y);
-        return true;
-    }
-    else if (p == ".Rotation.Roll") {
-        res = Py::Float(getYawPitchRoll(_cPos).z);
-        return true;
-    }
-
-    return false;
-}
-
-PyObject* PropertyPlacement::getPyObject()
-{
-    return new Base::PlacementPy(new Base::Placement(_cPos));
-}
-
-void PropertyPlacement::setPyObject(PyObject* value)
-{
-    if (PyObject_TypeCheck(value, &(Base::MatrixPy::Type))) {
-        Base::MatrixPy* pcObject = static_cast<Base::MatrixPy*>(value);
-        Base::Matrix4D mat = pcObject->value();
-        Base::Placement p;
-        p.fromMatrix(mat);
-        setValue(p);
-    }
-    else if (PyObject_TypeCheck(value, &(Base::PlacementPy::Type))) {
-        setValue(*static_cast<Base::PlacementPy*>(value)->getPlacementPtr());
-    }
-    else {
-        std::string error = std::string("type must be 'Matrix' or 'Placement', not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
-    }
-}
-
 void PropertyPlacement::Save(Base::Writer& writer) const
 {
     // clang-format off
@@ -913,27 +686,6 @@ TYPESYSTEM_SOURCE(App::PropertyPlacementList, App::PropertyLists)
 PropertyPlacementList::PropertyPlacementList() = default;
 
 PropertyPlacementList::~PropertyPlacementList() = default;
-
-//**************************************************************************
-// Base class implementer
-
-PyObject* PropertyPlacementList::getPyObject()
-{
-    PyObject* list = PyList_New(getSize());
-
-    for (int i = 0; i < getSize(); i++) {
-        PyList_SetItem(list, i, new Base::PlacementPy(new Base::Placement(_lValueList[i])));
-    }
-
-    return list;
-}
-
-Base::Placement PropertyPlacementList::getPyValue(PyObject* item) const
-{
-    PropertyPlacement val;
-    val.setPyObject(item);
-    return val.getValue();
-}
 
 void PropertyPlacementList::Save(Base::Writer& writer) const
 {
@@ -1178,63 +930,6 @@ const boost::any PropertyRotation::getPathValue(const ObjectIdentifier& path) co
     }
     else {
         return Property::getPathValue(path);
-    }
-}
-
-bool PropertyRotation::getPyPathValue(const ObjectIdentifier& path, Py::Object& res) const
-{
-    auto getAxis = [](const Base::Rotation& rot) {
-        Base::Vector3d axis;
-        double angle;
-        rot.getRawValue(axis, angle);
-        return axis;
-    };
-
-    std::string p = path.getSubPathStr();
-    if (p == ".Angle") {
-        Base::Vector3d axis;
-        double angle;
-        _rot.getValue(axis, angle);
-        res = Py::asObject(new QuantityPy(new Quantity(Base::toDegrees(angle), Unit::Angle)));
-        return true;
-    }
-    else if (p == ".Axis.x") {
-        res = Py::Float(getAxis(_rot).x);
-        return true;
-    }
-    else if (p == ".Axis.y") {
-        res = Py::Float(getAxis(_rot).y);
-        return true;
-    }
-    else if (p == ".Axis.z") {
-        res = Py::Float(getAxis(_rot).z);
-        return true;
-    }
-
-    return false;
-}
-
-PyObject* PropertyRotation::getPyObject()
-{
-    return new Base::RotationPy(new Base::Rotation(_rot));
-}
-
-void PropertyRotation::setPyObject(PyObject* value)
-{
-    if (PyObject_TypeCheck(value, &(Base::MatrixPy::Type))) {
-        Base::MatrixPy* object = static_cast<Base::MatrixPy*>(value);
-        Base::Matrix4D mat = object->value();
-        Base::Rotation p;
-        p.setValue(mat);
-        setValue(p);
-    }
-    else if (PyObject_TypeCheck(value, &(Base::RotationPy::Type))) {
-        setValue(*static_cast<Base::RotationPy*>(value)->getRotationPtr());
-    }
-    else {
-        std::string error = std::string("type must be 'Matrix' or 'Rotation', not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
     }
 }
 

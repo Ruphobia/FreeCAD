@@ -50,8 +50,6 @@
 
 #include <FCConfig.h>
 
-#include <App/DocumentPy.h>
-#include <Base/Interpreter.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/FileInfo.h>
@@ -90,7 +88,6 @@
 FC_LOG_LEVEL_INIT("App", true, true, true)
 
 using Base::Console;
-using Base::streq;
 using Base::Writer;
 using namespace App;
 using namespace std;
@@ -820,15 +817,7 @@ void Document::setTransactionMode(const int iMode) // NOLINT
 Document::Document(const char* documentName)
     : d(new DocumentP), myName(documentName)
 {
-    // Remark: In a constructor we should never increment a Python object as we cannot be sure
-    // if the Python interpreter gets a reference of it. E.g. if we increment but Python don't
-    // get a reference then the object wouldn't get deleted in the destructor.
-    // So, we must increment only if the interpreter gets a reference.
-    // Remark: We force the document Python object to own the DocumentPy instance, thus we don't
-    // have to care about ref counting any more.
     setAutoCreated(false);
-    Base::PyGILStateLocker lock;
-    d->DocumentPythonObject = Py::Object(new DocumentPy(this), true);
 
 #ifdef FC_LOGUPDATECHAIN
     Console().log("+App::Document: %p\n", this);
@@ -941,15 +930,6 @@ Document::~Document()
 
     d->clearDocument();
 
-    // Remark: The API of Py::Object has been changed to set whether the wrapper owns the passed
-    // Python object or not. In the constructor we forced the wrapper to own the object so we need
-    // not to dec'ref the Python object any more.
-    // But we must still invalidate the Python object because it doesn't need to be
-    // destructed right now because the interpreter can own several references to it.
-    Base::PyGILStateLocker lock;
-    auto* doc = static_cast<Base::PyObjectBase*>(d->DocumentPythonObject.ptr());
-    // Call before decrementing the reference counter, otherwise a heap error can occur
-    doc->setInvalid();
 
     // remove Transient directory
     try {
@@ -2094,16 +2074,6 @@ bool Document::afterRestore(const std::vector<DocumentObject*>& objArray, bool c
             FC_ERR("Failed to restore " << obj->getFullName() << ": " << e.what());
         }
         catch (...) {
-
-            // If a Python exception occurred, it must be cleared immediately.
-            // Otherwise, the interpreter remains in a dirty state, causing
-            // Segfaults later when FreeCAD interacts with Python.
-            if (PyErr_Occurred()) {
-                Base::Console().error("Python error during object restore:\n");
-                PyErr_Print(); // Print the traceback to stderr/Console
-                PyErr_Clear(); // Reset the interpreter state
-            }
-
             d->addRecomputeLog("Unknown exception on restore", obj);
             FC_ERR("Failed to restore " << obj->getFullName() << ": " << "unknown exception");
         }
@@ -3729,10 +3699,6 @@ int Document::countObjectsOfType(const char* typeName) const
     return type.isBad() ? 0 : countObjectsOfType(type);
 }
 
-PyObject* Document::getPyObject()
-{
-    return Py::new_reference_to(d->DocumentPythonObject);
-}
 
 std::vector<DocumentObject*> Document::getRootObjects() const
 {

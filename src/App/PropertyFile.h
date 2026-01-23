@@ -55,7 +55,6 @@ public:
         return "Gui::PropertyEditor::PropertyFileItem";
     }
 
-    void setPyObject(PyObject*) override;
     virtual void setFilter(const std::string filter);
     virtual std::string getFilter() const;
 
@@ -92,9 +91,6 @@ public:
     {
         return "Gui::PropertyEditor::PropertyTransientFileItem";
     }
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
     void Save(Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
 

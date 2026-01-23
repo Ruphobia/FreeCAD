@@ -55,7 +55,6 @@
 #include <Base/Tools.h>
 
 #include "Document.h"
-#include "DocumentPy.h"
 #include "Application.h"
 #include "Command.h"
 #include "Control.h"
@@ -527,11 +526,8 @@ Document::Document(App::Document* pcDocument, Application* app)
 
     pcDocument->setPreRecomputeHook([this] { callSignalBeforeRecompute(); });
 
-    // pointer to the python class
-    // NOTE: As this Python object doesn't get returned to the interpreter we
-    // mustn't increment it (Werner Jan-12-2006)
-    Base::PyGILStateLocker lock;
-    _pcDocPy = new Gui::DocumentPy(this);
+    // Python object creation removed (DocumentPy no longer generated)
+    _pcDocPy = nullptr;
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
         "User parameter:BaseApp/Preferences/Document"
@@ -591,10 +587,12 @@ Document::~Document()
         delete it2->second;
     }
 
-    // remove the reference from the object
-    Base::PyGILStateLocker lock;
-    _pcDocPy->setInvalid();
-    _pcDocPy->DecRef();
+    // Python cleanup removed (DocumentPy no longer generated)
+    if (_pcDocPy) {
+        Base::PyGILStateLocker lock;
+        _pcDocPy->setInvalid();
+        _pcDocPy->DecRef();
+    }
     delete d;
 }
 
@@ -2897,8 +2895,7 @@ void Document::redo(int iSteps)
 
 PyObject* Document::getPyObject()
 {
-    _pcDocPy->IncRef();
-    return _pcDocPy;
+    Py_Return;
 }
 
 void Document::handleChildren3D(ViewProvider* viewProvider, bool deleting)

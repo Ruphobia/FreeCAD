@@ -194,10 +194,6 @@ public:
                     const char* subname = nullptr,
                     bool all = false) const override;
 
-    /* Python interface */
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
-
 protected:
     void hasSetValue() override;
 

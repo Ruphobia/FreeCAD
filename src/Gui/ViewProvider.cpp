@@ -55,7 +55,6 @@
 #include "ViewParams.h"
 #include "ViewProviderExtension.h"
 #include "ViewProviderLink.h"
-#include "ViewProviderPy.h"
 
 #include <Utilities.h>
 
@@ -600,11 +599,7 @@ std::string ViewProvider::toString() const
 
 PyObject* ViewProvider::getPyObject()
 {
-    if (!pyViewObject) {
-        pyViewObject = new ViewProviderPy(this);
-    }
-    pyViewObject->IncRef();
-    return pyViewObject;
+    Py_Return;
 }
 
 #include <boost/graph/topological_sort.hpp>

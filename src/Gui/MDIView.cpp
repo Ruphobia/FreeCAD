@@ -40,7 +40,6 @@
 #include <Gui/PreferencePages/DlgSettingsPDF.h>
 
 #include "MDIView.h"
-#include "MDIViewPy.h"
 #include "Application.h"
 #include "Document.h"
 #include "FileDialog.h"
@@ -153,12 +152,7 @@ void MDIView::cloneFrom(const MDIView& from)
 
 PyObject* MDIView::getPyObject()
 {
-    if (!pythonObject) {
-        pythonObject = new MDIViewPy(this);
-    }
-
-    Py_INCREF(pythonObject);
-    return pythonObject;
+    Py_Return;
 }
 
 void MDIView::setOverrideCursor(const QCursor& c)

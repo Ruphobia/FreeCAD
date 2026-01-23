@@ -28,7 +28,6 @@
 
 #include "Document.h"
 #include "GeoFeatureGroupExtension.h"
-#include "GroupExtensionPy.h"
 
 
 using namespace App;
@@ -38,10 +37,8 @@ EXTENSION_PROPERTY_SOURCE(App::GroupExtension, App::DocumentObjectExtension)
 
 namespace App
 {
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::GroupExtensionPython, App::GroupExtension)
 
 // explicit template instantiation
-template class AppExport ExtensionPythonT<GroupExtensionPythonT<GroupExtension>>;
 }  // namespace App
 
 GroupExtension::GroupExtension()
@@ -326,9 +323,6 @@ DocumentObject* GroupExtension::getGroupOfObject(const DocumentObject* obj)
     // the same time)
     for (auto o : obj->getInList()) {
         Extension* ext = o->getExtension(GroupExtension::getExtensionClassTypeId(), false, true);
-        if (!ext) {
-            ext = o->getExtension(GroupExtensionPython::getExtensionClassTypeId(), false, true);
-        }
         if (ext) {
             auto grp = static_cast<GroupExtension*>(ext)->Group.getValues();
             if (std::find(grp.begin(), grp.end(), obj) != grp.end()) {
@@ -340,16 +334,6 @@ DocumentObject* GroupExtension::getGroupOfObject(const DocumentObject* obj)
     return nullptr;
 }
 
-PyObject* GroupExtension::getExtensionPyObject()
-{
-
-    if (ExtensionPythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        auto grp = new GroupExtensionPy(this);
-        ExtensionPythonObject = Py::Object(grp, true);
-    }
-    return Py::new_reference_to(ExtensionPythonObject);
-}
 
 void GroupExtension::extensionOnChanged(const Property* p)
 {
@@ -415,7 +399,6 @@ void GroupExtension::slotChildChanged(const DocumentObject& obj, const Property&
 
 bool GroupExtension::extensionGetSubObject(DocumentObject*& ret,
                                            const char* subname,
-                                           PyObject** pyObj,
                                            Base::Matrix4D* mat,
                                            bool /*transform*/,
                                            int depth) const
@@ -445,7 +428,7 @@ bool GroupExtension::extensionGetSubObject(DocumentObject*& ret,
     if (!ret) {
         return false;
     }
-    return ret->getSubObject(dot + 1, pyObj, mat, true, depth + 1);
+    return ret->getSubObject(dot + 1, mat, true, depth + 1);
 }
 
 bool GroupExtension::extensionGetSubObjects(std::vector<std::string>& ret, int) const

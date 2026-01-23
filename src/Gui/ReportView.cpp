@@ -38,8 +38,6 @@
 #include "BitmapFactory.h"
 #include "DockWindowManager.h"
 #include "FileDialog.h"
-#include "PythonConsole.h"
-#include "PythonConsolePy.h"
 #include "Tools.h"
 
 
@@ -76,13 +74,7 @@ ReportView::ReportView(QWidget* parent)
     int output = tabWidget->addTab(tabOutput, tabOutput->windowTitle());
     tabWidget->setTabIcon(output, tabOutput->windowIcon());
 
-    // create the python console
-    tabPython = new PythonConsole();
-    tabPython->setWordWrapMode(QTextOption::NoWrap);
-    tabPython->setWindowTitle(tr("Python Console"));
-    tabPython->setWindowIcon(BitmapFactory().iconFromTheme("applications-python"));
-    int python = tabWidget->addTab(tabPython, tabPython->windowTitle());
-    tabWidget->setTabIcon(python, tabPython->windowIcon());
+    // Python console tab removed (PythonConsole no longer available)
     tabWidget->setCurrentIndex(0);
 
     // raise the tab page set in the preferences

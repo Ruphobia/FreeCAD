@@ -33,9 +33,6 @@
 
 #include "Macro.h"
 #include "MainWindow.h"
-#include "PythonConsole.h"
-#include "PythonConsolePy.h"
-#include "PythonDebugger.h"
 
 
 using namespace Gui;
@@ -201,7 +198,7 @@ bool MacroOutputOption::isAppCommand(int type)
 // ----------------------------------------------------------------------------
 
 MacroManager::MacroManager()
-    : pyDebugger(new PythonDebugger())
+    : pyDebugger(nullptr)
 {
     // Attach to the Parametergroup regarding macros
     this->params = App::GetApplication().GetParameterGroupByPath(
@@ -213,7 +210,6 @@ MacroManager::MacroManager()
 
 MacroManager::~MacroManager()
 {
-    delete pyDebugger;
     this->params->Detach(this);
 }
 
@@ -325,13 +321,7 @@ void MacroManager::addToOutput(LineType type, const char* line)
     }
 
     if (option.scriptToPyConsole) {
-        // search for the Python console
-        auto console = getPythonConsole();
-        if (console) {
-            for (auto& line : lines) {
-                console->printStatement(line);
-            }
-        }
+        // PythonConsole no longer available
     }
 }
 
@@ -344,12 +334,7 @@ void MacroManager::setModule(const char* sModule)
 
 PythonConsole* MacroManager::getPythonConsole() const
 {
-    // search for the Python console
-    if (!this->pyConsole) {
-        this->pyConsole = Gui::getMainWindow()->findChild<Gui::PythonConsole*>();
-    }
-
-    return this->pyConsole;
+    return nullptr;
 }
 
 namespace Gui

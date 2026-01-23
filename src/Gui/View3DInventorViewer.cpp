@@ -130,7 +130,6 @@
 #include "SoTouchEvents.h"
 #include "SpaceballEvent.h"
 #include "View3DInventorRiftViewer.h"
-#include "View3DViewerPy.h"
 #include "ViewParams.h"
 #include "ViewProvider.h"
 #include "ViewProviderDocumentObject.h"
@@ -4541,12 +4540,7 @@ void View3DInventorViewer::turnDeltaDimensionsOff()
 
 PyObject* View3DInventorViewer::getPyObject()
 {
-    if (!_viewerPy) {
-        _viewerPy = new View3DInventorViewerPy(this);
-    }
-
-    Py_INCREF(_viewerPy);
-    return _viewerPy;
+    Py_Return;
 }
 
 /**

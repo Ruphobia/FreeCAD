@@ -484,7 +484,6 @@ public:
     }
 
     std::string toString() const;
-    PyObject* getPyObject() override;
 
     /** @name Display mode methods
      */

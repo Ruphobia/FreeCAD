@@ -47,7 +47,6 @@
 #include <App/Application.h>
 
 #include "Navigation/NavigationStyle.h"
-#include "Navigation/NavigationStylePy.h"
 #include "Application.h"
 #include "Command.h"
 #include "Action.h"
@@ -2177,11 +2176,7 @@ void NavigationStyle::openPopupMenu(const SbVec2s& position)
 
 PyObject* NavigationStyle::getPyObject()
 {
-    if (pythonObject.is(nullptr)) {
-        // ref counter is set to 1
-        pythonObject = Py::asObject(new NavigationStylePy(this));
-    }
-    return Py::new_reference_to(pythonObject);
+    Py_Return;
 }
 
 // ----------------------------------------------------------------------------------

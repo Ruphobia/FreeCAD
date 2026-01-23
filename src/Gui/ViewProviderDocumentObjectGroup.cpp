@@ -149,6 +149,5 @@ namespace Gui
 PROPERTY_SOURCE_TEMPLATE(Gui::ViewProviderDocumentObjectGroupPython, Gui::ViewProviderDocumentObjectGroup)
 /// @endcond
 
-// explicit template instantiation
-template class GuiExport ViewProviderFeaturePythonT<ViewProviderDocumentObjectGroup>;
+
 }  // namespace Gui

@@ -97,6 +97,5 @@ EXTENSION_PROPERTY_SOURCE_TEMPLATE(
     Gui::ViewProviderOriginGroupExtension
 )
 
-// explicit template instantiation
-template class GuiExport ViewProviderExtensionPythonT<ViewProviderOriginGroupExtension>;
+
 }  // namespace Gui

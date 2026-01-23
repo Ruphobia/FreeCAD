@@ -298,6 +298,5 @@ namespace Gui
 {
 EXTENSION_PROPERTY_SOURCE_TEMPLATE(Gui::ViewProviderGroupExtensionPython, Gui::ViewProviderGroupExtension)
 
-// explicit template instantiation
-template class GuiExport ViewProviderExtensionPythonT<ViewProviderGroupExtension>;
+
 }  // namespace Gui

@@ -24,8 +24,6 @@
 
 #include <iomanip>
 
-#include <CXX/WrapPython.h>
-
 #include "Exception.h"
 #include "UnitsApi.h"
 #include "UnitsSchema.h"
@@ -99,28 +97,6 @@ void UnitsApi::setSchema(const std::string& name)
 void UnitsApi::setSchema(const size_t num)
 {
     schemas->select(num);
-}
-
-double UnitsApi::toDouble(PyObject* args, const Base::Unit& u)
-{
-    if (PyUnicode_Check(args)) {
-        std::string str(PyUnicode_AsUTF8(args));
-        // Parse the string
-        Quantity q = Quantity::parse(str);
-        if (q.getUnit() == u) {
-            return q.getValue();
-        }
-        throw Base::UnitsMismatchError("Wrong unit type!");
-    }
-
-    if (PyFloat_Check(args)) {
-        return PyFloat_AsDouble(args);
-    }
-    if (PyLong_Check(args)) {
-        return static_cast<double>(PyLong_AsLong(args));
-    }
-
-    throw Base::UnitsMismatchError("Wrong parameter type!");
 }
 
 std::string UnitsApi::schemaTranslate(const Quantity& quant, double& factor, std::string& unitString)

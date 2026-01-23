@@ -45,8 +45,6 @@
 #include "FileDialog.h"
 #include "Macro.h"
 #include "MainWindow.h"
-#include "PythonEditor.h"
-#include "PythonTracing.h"
 #include "WaitCursor.h"
 
 #include <Base/Exception.h>
@@ -651,70 +649,41 @@ PythonEditorView::PythonEditorView(PythonEditor* editor, QWidget* parent)
     : EditorView(editor, parent)
     , _pye(editor)
 {
-    connect(this, &PythonEditorView::changeFileName, editor, &PythonEditor::setFileName);
-    watcher = new PythonTracingWatcher(this);
+    watcher = nullptr;
 }
 
 PythonEditorView::~PythonEditorView()
 {
-    delete watcher;
 }
 
-/**
- * Runs the action specified by \a pMsg.
- */
 bool PythonEditorView::onMsg(const char* pMsg, const char** ppReturn)
 {
     if (strcmp(pMsg, "Run") == 0) {
         executeScript();
         return true;
     }
-    else if (strcmp(pMsg, "StartDebug") == 0) {
-        QTimer::singleShot(300, this, &PythonEditorView::startDebug);
-        return true;
-    }
-    else if (strcmp(pMsg, "ToggleBreakpoint") == 0) {
-        toggleBreakpoint();
-        return true;
-    }
     return EditorView::onMsg(pMsg, ppReturn);
 }
 
-/**
- * Checks if the action \a pMsg is available. This is for enabling/disabling
- * the corresponding buttons or menu items for this action.
- */
 bool PythonEditorView::onHasMsg(const char* pMsg) const
 {
     if (strcmp(pMsg, "Run") == 0) {
         return true;
     }
-    if (strcmp(pMsg, "StartDebug") == 0) {
-        return true;
-    }
-    if (strcmp(pMsg, "ToggleBreakpoint") == 0) {
-        return true;
-    }
     return EditorView::onHasMsg(pMsg);
 }
 
-/**
- * Runs the opened script in the macro manager.
- */
 void PythonEditorView::executeScript()
 {
-    // always save the macro when it is modified
     if (EditorView::onHasMsg("Save")) {
         EditorView::onMsg("Save", nullptr);
     }
     try {
         getMainWindow()->setCursor(Qt::WaitCursor);
-        PythonTracingLocker tracelock(watcher->getTrace());
         Application::Instance->macroManager()->run(Gui::MacroManager::File, fileName().toUtf8());
         getMainWindow()->unsetCursor();
     }
     catch (const Base::SystemExitException&) {
-        // handle SystemExit exceptions
         Base::PyGILStateLocker locker;
         Base::PyException e;
         e.reportException();
@@ -724,22 +693,19 @@ void PythonEditorView::executeScript()
 
 void PythonEditorView::startDebug()
 {
-    _pye->startDebug();
 }
 
 void PythonEditorView::toggleBreakpoint()
 {
-    _pye->toggleBreakpoint();
 }
 
 void PythonEditorView::showDebugMarker(int line)
 {
-    _pye->showDebugMarker(line);
+    (void)line;
 }
 
 void PythonEditorView::hideDebugMarker()
 {
-    _pye->hideDebugMarker();
 }
 
 // ----------------------------------------------------------------------------

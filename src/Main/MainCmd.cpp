@@ -29,13 +29,12 @@
 #endif  // HAVE_CONFIG_H
 
 #include <cstdio>
-#include <ostream>
+#include <iostream>
 #include <QString>
 
 // FreeCAD Base header
 #include <Base/Console.h>
 #include <Base/Exception.h>
-#include <Base/Interpreter.h>
 
 // FreeCAD doc header
 #include <App/Application.h>
@@ -101,21 +100,8 @@ int main(int argc, char** argv)
     }
     catch (const Base::Exception& e) {
         std::string appName = App::Application::Config()["ExeName"];
-        std::cout << "While initializing " << appName << " the following exception occurred: '"
-                  << e.what() << "'\n\n";
-        std::cout << "Python is searching for its runtime files in the following directories:\n"
-                  << Base::Interpreter().getPythonPath() << "\n\n";
-        std::cout << "Python version information:\n" << Py_GetVersion() << "\n";
-        const char* pythonhome = getenv("PYTHONHOME");
-        if (pythonhome) {
-            std::cout << "\nThe environment variable PYTHONHOME is set to '" << pythonhome << "'.";
-            std::cout << "\nSetting this environment variable might cause Python to fail. "
-                         "Please contact your administrator to unset it on your system.";
-        }
-        else {
-            std::cout << "\nPlease contact the application's support team for more information.";
-        }
-        std::cout << std::endl;
+        std::cerr << "While initializing " << appName << " the following exception occurred: '"
+                  << e.what() << "'\n";
         exit(100);
     }
     catch (...) {
@@ -129,9 +115,6 @@ int main(int argc, char** argv)
     // Run phase ===========================================================
     try {
         Application::runApplication();
-    }
-    catch (const Base::SystemExitException& e) {
-        exit(e.getExitCode());
     }
     catch (const Base::Exception& e) {
         e.reportException();

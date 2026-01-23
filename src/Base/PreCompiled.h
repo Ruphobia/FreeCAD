@@ -28,9 +28,6 @@
 
 #include <FCConfig.h>
 
-// Python
-#include <Python.h>
-
 // standard
 #include <algorithm>
 #include <array>

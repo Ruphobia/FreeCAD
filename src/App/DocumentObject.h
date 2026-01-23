@@ -32,7 +32,6 @@
 #include <App/PropertyGeo.h>
 #include <App/PropertyLinks.h>
 #include <App/PropertyStandard.h>
-#include <Base/SmartPtrPy.h>
 #include <Base/Placement.h>
 
 #include <bitset>
@@ -402,7 +401,6 @@ public:
      * additional or different behavior.
      */
     virtual void onLostLinkToObject(DocumentObject*);
-    PyObject* getPyObject() override;
 
     /** Get the sub element/object by name
      *
@@ -433,7 +431,6 @@ public:
      * zero.
      */
     virtual DocumentObject* getSubObject(const char* subname,
-                                         PyObject** pyObj = nullptr,
                                          Base::Matrix4D* mat = nullptr,
                                          bool transform = true,
                                          int depth = 0) const;
@@ -603,7 +600,6 @@ public:
                                  App::DocumentObject** parent = nullptr,
                                  std::string* childName = nullptr,
                                  const char** subElement = nullptr,
-                                 PyObject** pyObj = nullptr,
                                  Base::Matrix4D* mat = nullptr,
                                  bool transform = true,
                                  int depth = 0) const;
@@ -791,9 +787,7 @@ protected:
 private:
     void printInvalidLinks() const;
 
-    /// python object of this class and all descendent
 protected:  // attributes
-    Py::SmartPtr PythonObject;
     /// pointer to the document this object belongs to
     App::Document* _pDoc {nullptr};
 

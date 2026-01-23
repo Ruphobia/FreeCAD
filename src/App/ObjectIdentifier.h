@@ -634,29 +634,6 @@ public:
          */
         bool operator<(const Component& other) const;
 
-        /**
-         * @brief Get the value of the component given a Python object.
-         *
-         * @param[in] pyobj The Python object to get the value from.
-         * @return The value of the component.
-         */
-        Py::Object get(const Py::Object& pyobj) const;
-
-        /**
-         * @brief Set the value of the component given a Python object.
-         *
-         * @param[in,out] pyobj The Python object to set the value to.
-         * @param[in] value The value to set.
-         */
-        void set(Py::Object& pyobj, const Py::Object& value) const;
-
-        /**
-         * @brief Delete the value of the component given a Python object.
-         *
-         * @param[in,out] pyobj The Python object to delete the value from.
-         */
-        void del(Py::Object& pyobj) const;
-
     private:
         String name;
         typeEnum type;
@@ -1320,22 +1297,6 @@ public:
      */
     App::any getValue(bool pathValue = false, bool* isPseudoProperty = nullptr) const;
 
-    /**
-     * @brief Get the value of the property or field pointed to by this object
-     * identifier.
-     *
-     * @see ObjectIdentifier::getValue().  In contrast, this method
-     * returns a Python %object.
-     *
-     * @param[in] pathValue: if true, calls the property's getPyPathValue(), which is
-     * necessary for quantities to work.
-     * @param[in] isPseudoProperty: if not `nullptr`, set to true if the property is a
-     * pseudo property.
-     *
-     * @return The value of the property or field.
-     */
-    Py::Object getPyValue(bool pathValue = false, bool* isPseudoProperty = nullptr) const;
-
     // Setter: is const because it does not alter the object state,
     // but does have an aiding effect.
 
@@ -1512,22 +1473,6 @@ protected:
     void getSubPathStr(std::ostream& ss, const ResolveResults& result, bool toPython = false) const;
 
     /**
-     * @brief Access the value of the property or field pointed to by this
-     * object.
-     *
-     * This method can either set or get a value of the property or field of
-     * the object identifier given a ResolveResults.  If @p deps is not
-     * `nullptr`, the dependencies are updated.
-     *
-     * @param[in] rs The resolve results.
-     * @param[in] value The value to set.
-     * @param[in,out] deps The dependencies to set.
-     */
-    Py::Object access(const ResolveResults& rs,
-                      const Py::Object* value = nullptr,
-                      Dependencies* deps = nullptr) const;
-
-    /**
      * @brief Resolve the object identifier to a concrete document, document
      * object, and property.
      *
@@ -1599,34 +1544,6 @@ inline std::size_t hash_value(const App::ObjectIdentifier& path)
     return path.hash();
 }
 
-//@{
-/**
- * @brief Helper function to convert Python object to App::any
- *
- * @warning Must hold Python global interpreter lock before calling these
- * functions
- *
- * @param[in] pyobj The Python object to convert.
- * @param[in] check If true, check if the object is convertible to App::any,
- * otherwise just return as is.
- *
- * @return The converted App::any object.
- * @throw Base::ValueError if the object is not convertible to a unicode string.
- */
-App::any AppExport pyObjectToAny(Py::Object pyobj, bool check = true);
-
-/**
- * @brief Helper function to convert Python object from App::any
- *
- * @warning Must hold Python global interpreter lock before calling these
- * functions
- *
- * @param[in] value The App::any object to convert.
- * @return The converted Python object.
- * @throw Base::ExpressionError if the value has an unknown type.
- */
-Py::Object AppExport pyObjectFromAny(const App::any& value);
-//@}
 }  // namespace App
 
 namespace std

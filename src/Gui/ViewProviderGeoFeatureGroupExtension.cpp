@@ -173,6 +173,5 @@ EXTENSION_PROPERTY_SOURCE_TEMPLATE(
     Gui::ViewProviderGeoFeatureGroupExtension
 )
 
-// explicit template instantiation
-template class GuiExport ViewProviderExtensionPythonT<ViewProviderGeoFeatureGroupExtension>;
+
 }  // namespace Gui

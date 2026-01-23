@@ -27,7 +27,6 @@
 #include <atomic>
 #include <Base/Tools.h>
 #include <Base/Writer.h>
-#include <CXX/Objects.hxx>
 
 #include "Property.h"
 #include "ObjectIdentifier.h"
@@ -376,61 +375,6 @@ bool Property::isSame(const Property& other) const
 // PropertyListsBase
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void PropertyListsBase::_setPyObject(PyObject* value)
-{
-    std::vector<int> indices;
-    std::vector<PyObject*> vals;
-    Py::Object pySeq;
-
-    if (PyDict_Check(value)) {
-        Py::Dict dict(value);
-        auto size = dict.size();
-        vals.reserve(size);
-        indices.reserve(size);
-        int listSize = getSize();
-        for (auto it = dict.begin(); it != dict.end(); ++it) {
-            const auto& item = *it;
-            PyObject* key = item.first.ptr();
-            if (!PyLong_Check(key)) {
-                throw Base::TypeError("expect key type to be integer");
-            }
-            long idx = PyLong_AsLong(key);
-            if (idx < -1 || idx > listSize) {
-                throw Base::ValueError("index out of bound");
-            }
-            if (idx == -1 || idx == listSize) {
-                idx = listSize;
-                ++listSize;
-            }
-            indices.push_back(idx);
-            vals.push_back(item.second.ptr());
-        }
-    }
-    else {
-        if (PySequence_Check(value)) {
-            pySeq = value;
-        }
-        else {
-            PyObject* iter = PyObject_GetIter(value);
-            if (iter) {
-                Py::Object pyIter(iter, true);
-                pySeq = Py::asObject(PySequence_Fast(iter, ""));
-            }
-            else {
-                PyErr_Clear();
-                vals.push_back(value);
-            }
-        }
-        if (!pySeq.isNone()) {
-            Py::Sequence seq(pySeq);
-            vals.reserve(seq.size());
-            for (auto it = seq.begin(); it != seq.end(); ++it) {
-                vals.push_back((*it).ptr());
-            }
-        }
-    }
-    setPyValues(vals, indices);
-}
 
 
 //**************************************************************************

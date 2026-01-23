@@ -41,7 +41,6 @@
 #include "ElementNamingUtils.h"
 #include "Document.h"
 #include "DocumentObject.h"
-#include "DocumentObjectPy.h"
 #include "DocumentObjectExtension.h"
 #include "DocumentObjectGroup.h"
 #include "GeoFeatureGroupExtension.h"
@@ -85,17 +84,6 @@ DocumentObject::DocumentObject()
 
 DocumentObject::~DocumentObject()
 {
-    if (!PythonObject.is(Py::_None())) {
-        Base::PyGILStateLocker lock;
-        // Remark: The API of Py::Object has been changed to set whether the wrapper owns the passed
-        // Python object or not. In the constructor we forced the wrapper to own the object so we
-        // need not to dec'ref the Python object any more. But we must still invalidate the Python
-        // object because it need not to be destructed right now because the interpreter can own
-        // several references to it.
-        Base::PyObjectBase* obj = static_cast<Base::PyObjectBase*>(PythonObject.ptr());
-        // Call before decrementing the reference counter, otherwise a heap error can occur
-        obj->setInvalid();
-    }
 }
 
 void DocumentObject::printInvalidLinks() const
@@ -953,17 +941,7 @@ void DocumentObject::clearOutListCache() const
     _outListCached = false;
 }
 
-PyObject* DocumentObject::getPyObject()
-{
-    if (PythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        PythonObject = Py::Object(new DocumentObjectPy(this), true);
-    }
-    return Py::new_reference_to(PythonObject);
-}
-
 DocumentObject* DocumentObject::getSubObject(const char* subname,
-                                             PyObject** pyObj,
                                              Base::Matrix4D* mat,
                                              bool transform,
                                              int depth) const
@@ -971,7 +949,7 @@ DocumentObject* DocumentObject::getSubObject(const char* subname,
     DocumentObject* ret = nullptr;
     auto exts = getExtensionsDerivedFromType<App::DocumentObjectExtension>();
     for (auto ext : exts) {
-        if (ext->extensionGetSubObject(ret, subname, pyObj, mat, transform, depth)) {
+        if (ext->extensionGetSubObject(ret, subname, mat, transform, depth)) {
             return ret;
         }
     }
@@ -1016,7 +994,7 @@ DocumentObject* DocumentObject::getSubObject(const char* subname,
     }
 
     if (ret && dot) {
-        return ret->getSubObject(dot + 1, pyObj, mat, true, depth + 1);
+        return ret->getSubObject(dot + 1, mat, true, depth + 1);
     }
     return ret;
 }
@@ -1376,7 +1354,6 @@ DocumentObject* DocumentObject::resolve(const char* subname,
                                         App::DocumentObject** parent,
                                         std::string* childName,
                                         const char** subElement,
-                                        PyObject** pyObj,
                                         Base::Matrix4D* pmat,
                                         bool transform,
                                         int depth) const
@@ -1389,7 +1366,7 @@ DocumentObject* DocumentObject::resolve(const char* subname,
         *subElement = nullptr;
     }
 
-    auto obj = getSubObject(subname, pyObj, pmat, transform, depth);
+    auto obj = getSubObject(subname, pmat, transform, depth);
     if (!obj || !subname || *subname == 0) {
         return self;
     }

@@ -35,7 +35,6 @@
 #include "BaseClass.h"
 #include "FileInfo.h"
 
-using PyObject = struct _object;  // NOLINT
 
 // Remove once all used compilers support this
 #if defined(__cpp_lib_source_location)
@@ -192,12 +191,6 @@ public:
 
     inline void setTranslatable(bool translatable);
 
-    PyObject* getPyObject() override;             // exception data
-    void setPyObject(PyObject* pydict) override;  // set the exception data
-
-    virtual PyObject* getPyExceptionType() const;
-    virtual void setPyException() const;
-
 protected:
     Exception(const Exception& inst);
     Exception(Exception&& inst) noexcept;
@@ -219,15 +212,12 @@ public:
     explicit AbortException(const std::string& message = "Aborted operation");
 
     const char* what() const noexcept override;
-    PyObject* getPyExceptionType() const override;
 };
 
 class BaseExport XMLBaseException: public Exception
 {
 public:
     explicit XMLBaseException(const std::string& message = "XML base exception");
-
-    PyObject* getPyExceptionType() const override;
 };
 
 class BaseExport XMLParseException: public XMLBaseException
@@ -236,7 +226,6 @@ public:
     explicit XMLParseException(const std::string& message = "XML parse exception");
 
     const char* what() const noexcept override;
-    PyObject* getPyExceptionType() const override;
 };
 
 class BaseExport XMLAttributeError: public XMLBaseException
@@ -245,7 +234,6 @@ public:
     explicit XMLAttributeError(const std::string& message = "XML attribute error");
 
     const char* what() const noexcept override;
-    PyObject* getPyExceptionType() const override;
 };
 
 class BaseExport FileException: public Exception
@@ -260,11 +248,6 @@ public:
     const char* what() const noexcept override;
     void reportException() const override;
     std::string getFileName() const;
-    PyObject* getPyObject() override;
-
-    void setPyObject(PyObject* pydict) override;
-
-    PyObject* getPyExceptionType() const override;
 
 private:
     FileInfo file;
@@ -284,8 +267,6 @@ public:
     ~FileSystemError() noexcept override = default;
     FileSystemError& operator=(const FileSystemError&) = default;
     FileSystemError& operator=(FileSystemError&&) = default;
-
-    PyObject* getPyExceptionType() const override;
 };
 
 /** errors in a data structure */
@@ -298,9 +279,7 @@ public:
 
     ~BadFormatError() noexcept override = default;
     BadFormatError& operator=(const BadFormatError&) = default;
-    BadFormatError& operator=(BadFormatError&&) = default;
-    PyObject* getPyExceptionType() const override;
-};
+    BadFormatError& operator=(BadFormatError&&) = default;};
 
 #if defined(__GNUC__)
 // calling instance of our new handler expects a bad_alloc exception
@@ -315,32 +294,24 @@ public:
 #if defined(__GNUC__)
     const char* what() const noexcept override;
 #endif
-
-    PyObject* getPyExceptionType() const override;
 };
 
 /** can be used in an own signal handler */
 class BaseExport AccessViolation: public Exception
 {
 public:
-    explicit AccessViolation(const std::string& message = "Access violation");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit AccessViolation(const std::string& message = "Access violation");};
 
 /** can be used in an own signal handler */
 class BaseExport AbnormalProgramTermination: public Exception
 {
 public:
-    explicit AbnormalProgramTermination(const std::string& message = "Abnormal program termination");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit AbnormalProgramTermination(const std::string& message = "Abnormal program termination");};
 
 class BaseExport UnknownProgramOption: public Exception
 {
 public:
-    explicit UnknownProgramOption(const std::string& message = "Unknown program option");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit UnknownProgramOption(const std::string& message = "Unknown program option");};
 
 class BaseExport ProgramInformation: public Exception
 {
@@ -351,143 +322,103 @@ public:
 class BaseExport TypeError: public Exception
 {
 public:
-    explicit TypeError(const std::string& message = "Type error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit TypeError(const std::string& message = "Type error");};
 
 class BaseExport ValueError: public Exception
 {
 public:
-    explicit ValueError(const std::string& message = "Value error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ValueError(const std::string& message = "Value error");};
 
 /** sequence subscript is out of range */
 class BaseExport IndexError: public Exception
 {
 public:
-    explicit IndexError(const std::string& message = "Index error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit IndexError(const std::string& message = "Index error");};
 
 class BaseExport NameError: public Exception
 {
 public:
-    explicit NameError(const std::string& message = "Name error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit NameError(const std::string& message = "Name error");};
 
 class BaseExport ImportError: public Exception
 {
 public:
-    explicit ImportError(const std::string& message = "Import error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ImportError(const std::string& message = "Import error");};
 
 class BaseExport AttributeError: public Exception
 {
 public:
-    explicit AttributeError(const std::string& message = "Attribute error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit AttributeError(const std::string& message = "Attribute error");};
 
 class BaseExport PropertyError: public AttributeError
 {
 public:
-    explicit PropertyError(const std::string& message = "Property error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit PropertyError(const std::string& message = "Property error");};
 
 class BaseExport RuntimeError: public Exception
 {
 public:
-    explicit RuntimeError(const std::string& message = "Runtime error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit RuntimeError(const std::string& message = "Runtime error");};
 
 class BaseExport BadGraphError: public RuntimeError
 {
 public:
-    explicit BadGraphError(const std::string& message = "Bad graph error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit BadGraphError(const std::string& message = "Bad graph error");};
 
 class BaseExport NotImplementedError: public Exception
 {
 public:
-    explicit NotImplementedError(const std::string& message = "Not implemented error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit NotImplementedError(const std::string& message = "Not implemented error");};
 
 class BaseExport ZeroDivisionError: public Exception
 {
 public:
-    explicit ZeroDivisionError(const std::string& message = "Zero division error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ZeroDivisionError(const std::string& message = "Zero division error");};
 
 class BaseExport ReferenceError: public Exception
 {
 public:
-    explicit ReferenceError(const std::string& message = "Reference error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ReferenceError(const std::string& message = "Reference error");};
 
 class BaseExport ExpressionError: public Exception
 {
 public:
-    explicit ExpressionError(const std::string& message = "Expression error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ExpressionError(const std::string& message = "Expression error");};
 
 class BaseExport ParserError: public Exception
 {
 public:
-    explicit ParserError(const std::string& message = "Parser error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit ParserError(const std::string& message = "Parser error");};
 
 class BaseExport UnicodeError: public Exception
 {
 public:
-    explicit UnicodeError(const std::string& message = "Unicode error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit UnicodeError(const std::string& message = "Unicode error");};
 
 class BaseExport OverflowError: public Exception
 {
 public:
-    explicit OverflowError(const std::string& message = "Overflow error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit OverflowError(const std::string& message = "Overflow error");};
 
 class BaseExport UnderflowError: public Exception
 {
 public:
-    explicit UnderflowError(const std::string& message = "Underflow error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit UnderflowError(const std::string& message = "Underflow error");};
 
 class BaseExport UnitsMismatchError: public Exception
 {
 public:
-    explicit UnitsMismatchError(const std::string& message = "Units mismatch error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit UnitsMismatchError(const std::string& message = "Units mismatch error");};
 
 class BaseExport CADKernelError: public Exception
 {
 public:
-    explicit CADKernelError(const std::string& message = "CAD kernel error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit CADKernelError(const std::string& message = "CAD kernel error");};
 
 class BaseExport RestoreError: public Exception
 {
 public:
-    explicit RestoreError(const std::string& message = "Restore error");
-    PyObject* getPyExceptionType() const override;
-};
+    explicit RestoreError(const std::string& message = "Restore error");};
 
 inline void Exception::setMessage(const std::string& message)
 {

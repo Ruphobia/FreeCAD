@@ -35,10 +35,6 @@
 #include <FCGlobal.h>
 
 #include "ElementNamingUtils.h"
-namespace Py
-{
-class Object;
-}
 
 namespace App
 {
@@ -297,12 +293,6 @@ public:
      * @param[out] value The Python value of the property.
      * @return True if the value was successfully retrieved, false otherwise.
      */
-    virtual bool getPyPathValue([[maybe_unused]] const App::ObjectIdentifier& path,
-                                [[maybe_unused]] Py::Object& value) const
-    {
-        return false;
-    }
-
     /**
      * @brief Convert an object identifier to a canonical representation.
      *
@@ -813,23 +803,6 @@ protected:
      * @param[in] vals The new values for the property list as Python values.
      * @param[in] indices The indices of the values to set.
      */
-    virtual void setPyValues(const std::vector<PyObject*>& vals, const std::vector<int>& indices)
-    {
-        (void)vals;
-        (void)indices;
-        throw Base::NotImplementedError("not implemented");
-    }
-
-    /**
-     * @brief Set the values of the property list with a Python object.
-     *
-     * The Python object is expected to be a dictionary or something that looks
-     * like a sequence of values, for example a list or tuple, or an iterable.
-     *
-     * @param[in] pyObj The Python object to set the values from.
-     */
-    void _setPyObject(PyObject* pyObj);
-
 protected:
     /// The list of touched elements.
     std::set<int> _touchList;
@@ -847,19 +820,6 @@ class AppExport PropertyLists: public Property, public PropertyListsBase
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    /**
-     * @brief Set the values of the property list with a Python object.
-     *
-     * The Python object is expected to be a dictionary or something that looks
-     * like a sequence of values, for example a list or tuple, or an iterable.
-     *
-     * @param[in] obj The Python object to set the values from.
-     */
-    void setPyObject(PyObject* obj) override
-    {
-        _setPyObject(obj);
-    }
-
     /**
      * @brief Set the order of the elements to be relevant.
      *
@@ -1050,25 +1010,6 @@ public:
     }
 
     /**
-     * @brief Set the property value from a Python object.
-     *
-     * Attempts to extract a value via getPyValue() and assign it;
-     * on failure, falls back to the ParentT implementation.
-     *
-     * @param[in] value  A PyObject pointer representing the new value.
-     */
-    void setPyObject(PyObject* value) override
-    {
-        try {
-            setValue(getPyValue(value));
-            return;
-        }
-        catch (...) {
-        }
-        parent_type::setPyObject(value);
-    }
-
-    /**
      * @brief Set a value at a specific index, growing the list if needed.
      *
      * If @p index is -1 or equal to the current size, the list grows by one.
@@ -1097,37 +1038,6 @@ public:
         this->_touchList.insert(index);
         guard.tryInvoke();
     }
-
-protected:
-    void setPyValues(const std::vector<PyObject*>& vals, const std::vector<int>& indices) override
-    {
-        if (indices.empty()) {
-            ListT values {};
-            values.reserve(vals.size());
-            for (auto* valsContent : vals) {
-                values.push_back(getPyValue(valsContent));
-            }
-            setValues(std::move(values));
-            return;
-        }
-        assert(vals.size() == indices.size());
-        atomic_change guard(*this);
-        int i {0};
-        for (auto index : indices) {
-            set1Value(index, getPyValue(vals[i]));
-            i++;
-        }
-        guard.tryInvoke();
-    }
-
-    /**
-     * @brief Convert a Python object to a value of type T.
-     *
-     * @param[in] item  The Python object to convert.
-     *
-     * @return The converted value of type T.
-     */
-    virtual T getPyValue(PyObject* item) const = 0;
 
 protected:
     ListT _lValueList;

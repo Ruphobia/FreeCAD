@@ -28,7 +28,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <CXX/Extensions.hxx>
 #include "Selection.h"
 
 namespace App
@@ -127,23 +126,6 @@ protected:
 
 protected:
     SelectionFilter* Filter;
-};
-
-/**
- * A wrapper around a Python class that implements the SelectionGate interface
- * @author Werner Mayer
- */
-class SelectionGatePython: public SelectionGate
-{
-public:
-    /// Constructor
-    explicit SelectionGatePython(const Py::Object& obj);
-    ~SelectionGatePython() override;
-
-    bool allow(App::Document*, App::DocumentObject*, const char*) override;
-
-private:
-    Py::Object gate;
 };
 
 /**

@@ -115,9 +115,6 @@ public:
     }
     /// Get the GUI document to this ViewProvider object
     Gui::Document* getDocument() const;
-    /// Get the python wrapper for that ViewProvider
-    PyObject* getPyObject() override;
-
     /// return a hit element given the picked point which contains the full node path
     bool getElementPicked(const SoPickedPoint*, std::string& subname) const override;
     /// return the coin node detail and path to the node of the subname

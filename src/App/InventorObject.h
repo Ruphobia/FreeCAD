@@ -52,7 +52,6 @@ public:
         return DocumentObject::StdReturn;
     }
     short mustExecute() const override;
-    PyObject* getPyObject() override;
 
     PropertyString Buffer;
     PropertyString FileName;

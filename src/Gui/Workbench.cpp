@@ -27,7 +27,6 @@
 
 #include "Workbench.h"
 #include "WorkbenchManipulator.h"
-#include "WorkbenchPy.h"
 #include "Action.h"
 #include "Application.h"
 #include "Command.h"
@@ -35,7 +34,6 @@
 #include "DockWindowManager.h"
 #include "MainWindow.h"
 #include "MenuManager.h"
-#include "PythonWorkbenchPy.h"
 #include "Selection.h"
 #include "ToolBarManager.h"
 #include "ToolBoxManager.h"
@@ -475,7 +473,7 @@ void Workbench::retranslate() const
 
 PyObject* Workbench::getPyObject()
 {
-    return new WorkbenchPy(this);
+    Py_Return;
 }
 
 void Workbench::addTaskWatcher(const std::vector<Gui::TaskView::TaskWatcher*>& Watcher)
@@ -1106,14 +1104,7 @@ PythonBaseWorkbench::~PythonBaseWorkbench()
 
 PyObject* PythonBaseWorkbench::getPyObject()
 {
-    if (!_workbenchPy) {
-        _workbenchPy = new PythonWorkbenchPy(this);
-    }
-
-    // Increment every time when this object is returned
-    _workbenchPy->IncRef();
-
-    return _workbenchPy;
+    Py_Return;
 }
 
 MenuItem* PythonBaseWorkbench::setupMenuBar() const

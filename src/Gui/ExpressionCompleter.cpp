@@ -39,7 +39,6 @@
 #include <Gui/Application.h>
 #include <Gui/MainWindow.h>
 #include <Base/Tools.h>
-#include <CXX/Extensions.hxx>
 
 #include "ExpressionCompleter.h"
 

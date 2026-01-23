@@ -105,8 +105,6 @@ public:
     LinkView& operator=(const LinkView&) = delete;
     LinkView(const LinkView&) = delete;
 
-    PyObject* getPyObject() override;
-
     void unlink(LinkInfoPtr) override;
     void onLinkedIconChange(LinkInfoPtr) override;
     void onLinkedUpdateData(LinkInfoPtr, const App::Property*) override;
@@ -289,7 +287,6 @@ public:
     ViewProvider* startEditing(int ModNum) override;
     bool doubleClicked() override;
 
-    PyObject* getPyObject() override;
     PyObject* getPyLinkView();
 
     static void updateLinks(ViewProvider* vp);

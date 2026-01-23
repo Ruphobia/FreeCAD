@@ -27,7 +27,6 @@
 #define APP_DOCUMENTOBJECTGROUP_H
 
 #include "DocumentObject.h"
-#include "FeaturePython.h"
 #include "GroupExtension.h"
 
 
@@ -49,12 +48,7 @@ public:
     {
         return "Gui::ViewProviderDocumentObjectGroup";
     }
-
-    PyObject* getPyObject() override;
 };
-
-using DocumentObjectGroupPython = App::FeaturePythonT<DocumentObjectGroup>;
-
 
 }  // namespace App
 

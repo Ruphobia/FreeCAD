@@ -26,7 +26,6 @@
 #ifndef BASE_TRANSLATE_H
 #define BASE_TRANSLATE_H
 
-#include <CXX/Extensions.hxx>
 #include <QTranslator>
 #include <memory>
 #include <list>
@@ -34,28 +33,14 @@
 # include <FCGlobal.h>
 #endif
 
-namespace Py
-{
-class Object;
-class Tuple;
-}  // namespace Py
-
 namespace Base
 {
 
-class BaseExport Translate: public Py::ExtensionModule<Translate>  // NOLINT
+class BaseExport Translate
 {
 public:
     Translate();
-    ~Translate() override;
-
-private:
-    Py::Object translate(const Py::Tuple& args);
-    Py::Object translateNoop(const Py::Tuple& args);
-    Py::Object translateNoop3(const Py::Tuple& args);
-    Py::Object trNoop(const Py::Tuple& args);
-    Py::Object installTranslator(const Py::Tuple& args);
-    Py::Object removeTranslators(const Py::Tuple& args);
+    ~Translate();
 
 private:
     std::list<std::shared_ptr<QTranslator>> translators;

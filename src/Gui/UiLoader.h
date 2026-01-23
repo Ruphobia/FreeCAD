@@ -33,7 +33,6 @@
 # include <QObject>
 #endif
 
-#include <CXX/Extensions.hxx>
 #include <memory>
 
 
@@ -87,26 +86,11 @@ public:
 
     QString errorString() const;
 
-private:
-    Py::Object uiloader;
 };
 #endif
 
 namespace Gui
 {
-
-class PySideUicModule: public Py::ExtensionModule<PySideUicModule>
-{
-
-public:
-    PySideUicModule();
-    ~PySideUicModule() override = default;
-
-private:
-    Py::Object loadUiType(const Py::Tuple& args);
-    Py::Object loadUi(const Py::Tuple& args);
-    Py::Object createCustomWidget(const Py::Tuple&);
-};
 
 /**
  * The UiLoader class provides the abitlity to use the widget factory
@@ -153,37 +137,6 @@ public:
 
 private:
     QStringList cw;
-};
-
-// --------------------------------------------------------------------
-
-class UiLoaderPy: public Py::PythonExtension<UiLoaderPy>
-{
-public:
-    static void init_type();  // announce properties and methods
-
-    UiLoaderPy();
-    ~UiLoaderPy() override;
-
-    Py::Object repr() override;
-    Py::Object createWidget(const Py::Tuple&);
-    Py::Object load(const Py::Tuple&);
-
-    Py::Object addPluginPath(const Py::Tuple&);
-    Py::Object clearPluginPaths(const Py::Tuple&);
-    Py::Object pluginPaths(const Py::Tuple&);
-    Py::Object availableWidgets(const Py::Tuple&);
-    Py::Object errorString(const Py::Tuple&);
-    Py::Object isLanguageChangeEnabled(const Py::Tuple&);
-    Py::Object setLanguageChangeEnabled(const Py::Tuple&);
-    Py::Object setWorkingDirectory(const Py::Tuple&);
-    Py::Object workingDirectory(const Py::Tuple&);
-
-private:
-    static PyObject* PyMake(struct _typeobject*, PyObject*, PyObject*);
-
-private:
-    std::unique_ptr<UiLoader> loader;
 };
 
 }  // namespace Gui

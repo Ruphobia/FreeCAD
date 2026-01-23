@@ -30,7 +30,6 @@
 #include <string>
 
 #include "PropertyContainer.h"
-#include <Base/SmartPtrPy.h>
 
 namespace App {
 
@@ -191,14 +190,6 @@ public:
      */
     bool isPythonExtension() {return m_isPythonExtension;}
 
-    /**
-     * @brief Get the PyObject of the extension.
-     *
-     * @return The PyObject of the extension.
-     */
-    virtual PyObject* getExtensionPyObject();
-
-
     /** @name Access properties
      *
      * @{
@@ -334,9 +325,6 @@ protected:
 
     /// Whether the extension is a Python extension.
     bool m_isPythonExtension = false;
-
-    /// The Python object of the extension.
-    Py::SmartPtr ExtensionPythonObject;
 
 private:
     Base::Type                    m_extensionType;

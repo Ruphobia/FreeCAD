@@ -30,8 +30,6 @@
 #include <Base/Reader.h>
 #include <Base/Tools.h>
 #include <Base/Writer.h>
-#include <CXX/Objects.hxx>
-
 #include "PropertyExpressionEngine.h"
 #include "ExpressionVisitors.h"
 
@@ -964,23 +962,7 @@ void PropertyExpressionEngine::renameObjectIdentifiers(
     }
 }
 
-PyObject* PropertyExpressionEngine::getPyObject()
-{
-    Py::List list;
-    for (const auto& it : expressions) {
-        Py::Tuple tuple(2);
-        tuple.setItem(0, Py::String(it.first.toString()));
-        auto expr = it.second.expression;
-        tuple.setItem(1, expr ? Py::String(expr->toString()) : Py::None());
-        list.append(tuple);
-    }
-    return Py::new_reference_to(list);
-}
 
-void PropertyExpressionEngine::setPyObject(PyObject*)
-{
-    throw Base::RuntimeError("Property is read-only");
-}
 
 /* The policy implemented in the following function is to auto erase binding in
  * case linked object is gone. I think it is better to cause error and get

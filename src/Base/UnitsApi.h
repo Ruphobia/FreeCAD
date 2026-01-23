@@ -33,9 +33,6 @@
 
 class QString;
 
-using PyObject = struct _object;
-using PyMethodDef = struct PyMethodDef;
-
 namespace Base
 {
 
@@ -50,8 +47,6 @@ public:
     static std::string schemaTranslate(const Quantity& quant, double& factor, std::string& unitString);
 
     static std::string schemaTranslate(const Quantity& quant);
-
-    static double toDouble(PyObject* args, const Base::Unit& u = Base::Unit());
 
     static void setDecimals(int);
     static int getDecimals();
@@ -72,21 +67,10 @@ public:
     {
         return schemas->spec().num;
     }
-    // Python interface
-    static PyMethodDef Methods[];
-
 protected:
     static inline auto schemas = std::make_unique<UnitsSchemas>(UnitsSchemasData::unitSchemasDataPack);
     static inline int decimals {-1};
     static inline int denominator {-1};
-
-    // the python API wrapper methods
-    static PyObject* sParseQuantity(PyObject* self, PyObject* args);
-    static PyObject* sListSchemas(PyObject* self, PyObject* args);
-    static PyObject* sGetSchema(PyObject* self, PyObject* args);
-    static PyObject* sSetSchema(PyObject* self, PyObject* args);
-    static PyObject* sSchemaTranslate(PyObject* self, PyObject* args);
-    static PyObject* sToNumber(PyObject* self, PyObject* args);
 };
 
 }  // namespace Base

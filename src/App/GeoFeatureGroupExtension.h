@@ -106,7 +106,6 @@ public:
 
     bool extensionGetSubObject(DocumentObject*& ret,
                                const char* subname,
-                               PyObject** pyObj,
                                Base::Matrix4D* mat,
                                bool transform,
                                int depth) const override;
@@ -153,10 +152,6 @@ private:
     static void recursiveCSRelevantLinks(const App::DocumentObject* obj,
                                          std::vector<App::DocumentObject*>& vec);
 };
-
-using GeoFeatureGroupExtensionPython =
-    ExtensionPythonT<GroupExtensionPythonT<GeoFeatureGroupExtension>>;
-
 
 }  // namespace App
 

@@ -28,9 +28,6 @@
 
 #include "Type.h"
 
-// Python stuff
-using PyObject = struct _object;
-
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 /// define for subclassing Base::BaseClass
@@ -148,9 +145,6 @@ public:
     }
 
     static void init();
-
-    virtual PyObject* getPyObject();
-    virtual void setPyObject(PyObject*);
 
     static void* create()
     {

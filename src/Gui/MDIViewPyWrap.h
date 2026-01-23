@@ -61,7 +61,6 @@ public:
     bool onHasMsg(const char* pMsg) const override;
     /// overwrite when checking on close state
     bool canClose() override;
-    PyObject* getPyObject() override;
     /** @name Printing */
     //@{
 public Q_SLOTS:

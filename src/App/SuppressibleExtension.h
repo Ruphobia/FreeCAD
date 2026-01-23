@@ -27,7 +27,6 @@
 
 #include <App/DocumentObject.h>
 #include <App/DocumentObjectExtension.h>
-#include <App/ExtensionPython.h>
 
 namespace App
 {
@@ -43,23 +42,9 @@ public:
     SuppressibleExtension();
     ~SuppressibleExtension() override;
 
-    PyObject* getExtensionPyObject() override;
-
     /// Properties
     PropertyBool Suppressed;
 };
-
-template<typename ExtensionT>
-class SuppressibleExtensionPythonT: public ExtensionT
-{
-
-public:
-    SuppressibleExtensionPythonT() = default;
-    ~SuppressibleExtensionPythonT() override = default;
-};
-
-using SuppressibleExtensionPython =
-    ExtensionPythonT<SuppressibleExtensionPythonT<SuppressibleExtension>>;
 
 }  // namespace App
 

@@ -25,11 +25,15 @@
 #define GUI_APPLICATION_H
 
 #include "GuiApplicationNativeEventAware.h"
-#include <Base/Interpreter.h>  // For Base::SystemExitException
 #include <QList>
 #include <memory>
 
 class QSessionManager;
+
+namespace Base
+{
+class SystemExitException;
+}
 
 namespace Gui
 {

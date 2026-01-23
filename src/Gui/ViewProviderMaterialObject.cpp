@@ -77,6 +77,5 @@ namespace Gui
 PROPERTY_SOURCE_TEMPLATE(Gui::ViewProviderMaterialObjectPython, Gui::ViewProviderMaterialObject)
 /// @endcond
 
-// explicit template instantiation
-template class GuiExport ViewProviderFeaturePythonT<ViewProviderMaterialObject>;
+
 }  // namespace Gui

@@ -77,7 +77,6 @@ App::Origin* OriginGroupExtension::getOrigin() const
 
 bool OriginGroupExtension::extensionGetSubObject(DocumentObject*& ret,
                                                  const char* subname,
-                                                 PyObject** pyObj,
                                                  Base::Matrix4D* mat,
                                                  bool transform,
                                                  int depth) const
@@ -96,13 +95,12 @@ bool OriginGroupExtension::extensionGetSubObject(DocumentObject*& ret,
             if (mat && transform) {
                 *mat *= const_cast<OriginGroupExtension*>(this)->placement().getValue().toMatrix();
             }
-            ret = originObj->getSubObject(dot + 1, pyObj, mat, true, depth + 1);
+            ret = originObj->getSubObject(dot + 1, mat, true, depth + 1);
             return true;
         }
     }
     return GeoFeatureGroupExtension::extensionGetSubObject(ret,
                                                            subname,
-                                                           pyObj,
                                                            mat,
                                                            transform,
                                                            depth);
@@ -312,12 +310,3 @@ bool OriginGroupExtension::hasObject(const DocumentObject* obj, bool recursive) 
 }
 
 
-// Python feature ---------------------------------------------------------
-
-namespace App
-{
-EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::OriginGroupExtensionPython, App::OriginGroupExtension)
-
-// explicit template instantiation
-template class AppExport ExtensionPythonT<GroupExtensionPythonT<OriginGroupExtension>>;
-}  // namespace App

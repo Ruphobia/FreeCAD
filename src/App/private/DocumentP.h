@@ -39,8 +39,6 @@
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
-#include <CXX/Objects.hxx>
-
 #include <App/DocumentObject.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
@@ -83,8 +81,6 @@ struct DocumentP
     long lastObjectId {};
     DocumentObject* activeObject {nullptr};
     Transaction* activeUndoTransaction {nullptr};
-    // pointer to the python class
-    Py::Object DocumentPythonObject;
     int iTransactionMode {0};
     bool rollback {false};
     bool undoing {false};  ///< document in the middle of undo or redo

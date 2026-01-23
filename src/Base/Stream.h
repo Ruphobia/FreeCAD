@@ -40,7 +40,6 @@
 class QByteArray;
 class QIODevice;
 class QBuffer;
-using PyObject = struct _object;
 
 namespace Base
 {
@@ -497,54 +496,6 @@ private:
     static const int pbSize = 4;       // size of putback area
     static const int bufSize = 1024;   // size of the data buffer
     char buffer[bufSize + pbSize] {};  // data buffer
-};
-
-class BaseExport PyStreambuf: public std::streambuf
-{
-    using int_type = std::streambuf::int_type;
-    using pos_type = std::streambuf::pos_type;
-    using off_type = std::streambuf::off_type;
-    using seekdir = std::ios::seekdir;
-    using openmode = std::ios::openmode;
-
-public:
-    enum Type
-    {
-        StringIO,
-        BytesIO,
-        Unknown
-    };
-
-    explicit PyStreambuf(PyObject* o, std::size_t buf_size = 256, std::size_t put_back = 8);
-    ~PyStreambuf() override;
-    void setType(Type t)
-    {
-        type = t;
-    }
-
-protected:
-    int_type underflow() override;
-    int_type overflow(int_type c = EOF) override;
-    std::streamsize xsputn(const char* s, std::streamsize num) override;
-    int sync() override;
-    pos_type seekoff(off_type offset, seekdir dir, openmode mode) override;
-    pos_type seekpos(pos_type offset, openmode mode) override;
-
-private:
-    bool flushBuffer();
-    bool writeStr(const char* s, std::streamsize num);
-
-public:
-    PyStreambuf(const PyStreambuf&) = delete;
-    PyStreambuf(PyStreambuf&&) = delete;
-    PyStreambuf& operator=(const PyStreambuf&) = delete;
-    PyStreambuf& operator=(PyStreambuf&&) = delete;
-
-private:
-    PyObject* inp;
-    Type type {Unknown};
-    const std::size_t put_back;
-    std::vector<char> buffer;
 };
 
 class BaseExport Streambuf: public std::streambuf

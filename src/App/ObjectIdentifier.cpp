@@ -27,14 +27,9 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <App/DocumentObjectPy.h>
-#include <Base/GeometryPyCXX.h>
 #include <Base/Tools.h>
-#include <Base/Interpreter.h>
-#include <Base/QuantityPy.h>
 #include <Base/Console.h>
 #include <Base/Reader.h>
-#include <CXX/Objects.hxx>
 
 #include "ObjectIdentifier.h"
 #include "Application.h"
@@ -42,7 +37,6 @@
 #include "ExpressionParser.h"
 #include "Link.h"
 #include "Property.h"
-
 
 FC_LOG_LEVEL_INIT("Expression", true, true)
 
@@ -89,7 +83,6 @@ std::string App::quote(const std::string& input, bool toPython)
 
     return output.str();
 }
-
 
 ObjectIdentifier::ObjectIdentifier(const App::PropertyContainer* _owner,
                                    const std::string& property,
@@ -547,7 +540,6 @@ std::string ObjectIdentifier::getSubPathStr(bool toPython) const
     return ss.str();
 }
 
-
 ObjectIdentifier::Component::Component(const String& _name,
                                        ObjectIdentifier::Component::typeEnum _type,
                                        int _begin,
@@ -586,108 +578,6 @@ size_t ObjectIdentifier::Component::getIndex(size_t count) const
         }
     }
     FC_THROWM(Base::IndexError, "Array out of bound: " << begin << ", " << count);
-}
-
-Py::Object ObjectIdentifier::Component::get(const Py::Object& pyobj) const
-{
-    Py::Object res;
-    if (isSimple()) {
-        if (!pyobj.hasAttr(getName())) {
-            FC_THROWM(Base::AttributeError, "No attribute named '" << getName() << "'");
-        }
-        res = pyobj.getAttr(getName());
-    }
-    else if (isArray()) {
-        if (pyobj.isMapping()) {
-            res = Py::Mapping(pyobj).getItem(Py::Long(begin));
-        }
-        else {
-            res = Py::Sequence(pyobj).getItem(begin);
-        }
-    }
-    else if (isMap()) {
-        res = Py::Mapping(pyobj).getItem(getName());
-    }
-    else {
-        assert(isRange());
-        constexpr int max = std::numeric_limits<int>::max();
-        Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != max ? Py::Long(end).ptr() : nullptr,
-                                     step != 1 ? Py::Long(step).ptr() : nullptr),
-                         true);
-        PyObject* r = PyObject_GetItem(pyobj.ptr(), slice.ptr());
-        if (!r) {
-            Base::PyException::throwException();
-        }
-        res = Py::asObject(r);
-    }
-    if (!res.ptr()) {
-        Base::PyException::throwException();
-    }
-    if (PyModule_Check(res.ptr()) && !ExpressionParser::isModuleImported(res.ptr())) {
-        FC_THROWM(Base::RuntimeError, "Module '" << getName() << "' access denied.");
-    }
-    return res;
-}
-
-void ObjectIdentifier::Component::set(Py::Object& pyobj, const Py::Object& value) const
-{
-    if (isSimple()) {
-        if (PyObject_SetAttrString(*pyobj, getName().c_str(), *value) == -1) {
-            Base::PyException::throwException();
-        }
-    }
-    else if (isArray()) {
-        if (pyobj.isMapping()) {
-            Py::Mapping(pyobj).setItem(Py::Long(begin), value);
-        }
-        else {
-            Py::Sequence(pyobj).setItem(begin, value);
-        }
-    }
-    else if (isMap()) {
-        Py::Mapping(pyobj).setItem(getName(), value);
-    }
-    else {
-        assert(isRange());
-        constexpr int max = std::numeric_limits<int>::max();
-        Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != max ? Py::Long(end).ptr() : nullptr,
-                                     step != 1 ? Py::Long(step).ptr() : nullptr),
-                         true);
-        if (PyObject_SetItem(pyobj.ptr(), slice.ptr(), value.ptr()) < 0) {
-            Base::PyException::throwException();
-        }
-    }
-}
-
-void ObjectIdentifier::Component::del(Py::Object& pyobj) const
-{
-    if (isSimple()) {
-        pyobj.delAttr(getName());
-    }
-    else if (isArray()) {
-        if (pyobj.isMapping()) {
-            Py::Mapping(pyobj).delItem(Py::Long(begin));
-        }
-        else {
-            PySequence_DelItem(pyobj.ptr(), begin);
-        }
-    }
-    else if (isMap()) {
-        Py::Mapping(pyobj).delItem(getName());
-    }
-    else {
-        assert(isRange());
-        constexpr int max = std::numeric_limits<int>::max();
-        Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != max ? Py::Long(end).ptr() : nullptr,
-                                     step != 1 ? Py::Long(step).ptr() : nullptr),
-                         true);
-        if (PyObject_DelItem(pyobj.ptr(), slice.ptr()) < 0) {
-            Base::PyException::throwException();
-        }
-    }
 }
 
 ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const char* _component)
@@ -1037,7 +927,6 @@ DocumentObject* ObjectIdentifier::getDocumentObject() const
     return getDocumentObject(doc, result.resolvedDocumentObjectName, dummy);
 }
 
-
 enum PseudoPropertyType
 {
     PseudoNone,
@@ -1111,15 +1000,7 @@ void ObjectIdentifier::getDep(Dependencies& deps,
         return;
     }
 
-    Base::PyGILStateLocker lock;
-    try {
-        access(result, nullptr, &deps);
-    }
-    catch (Py::Exception& e) {
-        e.clear();
-    }
-    catch (Base::Exception&) {
-    }
+    deps[result.resolvedDocumentObject].insert(result.resolvedProperty->getName());
 }
 
 std::vector<std::string> ObjectIdentifier::getStringList() const
@@ -1206,7 +1087,6 @@ ObjectIdentifier& ObjectIdentifier::operator<<(ObjectIdentifier::Component&& val
     return *this;
 }
 
-
 Property* ObjectIdentifier::getProperty(int* ptype) const
 {
     ResolveResults result(*this);
@@ -1260,7 +1140,6 @@ Property* ObjectIdentifier::resolveProperty(const App::DocumentObject* obj,
 
     return obj->getPropertyByName(propertyName);
 }
-
 
 ObjectIdentifier ObjectIdentifier::canonicalPath() const
 {
@@ -1384,7 +1263,6 @@ void ObjectIdentifier::setDocumentObjectName(const App::DocumentObject* obj,
     _cache.clear();
 }
 
-
 ObjectIdentifier::String ObjectIdentifier::getDocumentObjectName() const
 {
     ResolveResults result(*this);
@@ -1450,236 +1328,6 @@ void ObjectIdentifier::String::checkImport(const App::DocumentObject* owner,
     }
 }
 
-Py::Object
-ObjectIdentifier::access(const ResolveResults& result, const Py::Object* value, Dependencies* deps) const
-{
-    if (!result.resolvedDocumentObject || !result.resolvedProperty
-        || (!subObjectName.getString().empty() && !result.resolvedSubObject)) {
-        FC_THROWM(Base::RuntimeError, result.resolveErrorString() << " in '" << toString() << "'");
-    }
-
-    Py::Object pyobj;
-    int ptype = result.propertyType;
-
-    // NOTE! We do not keep reference of the imported module, assuming once
-    // imported they'll live (because of sys.modules) till the application
-    // dies.
-#define GET_MODULE(_name)                                                                          \
-    do {                                                                                           \
-        static PyObject* pymod;                                                                    \
-        if (!pymod) {                                                                              \
-            pymod = PyImport_ImportModule(#_name);                                                 \
-            if (!pymod)                                                                            \
-                Base::PyException::throwException();                                               \
-            else                                                                                   \
-                Py_DECREF(pymod);                                                                  \
-        }                                                                                          \
-        pyobj = Py::Object(pymod);                                                                 \
-    } while (0)
-
-    size_t idx = result.propertyIndex + 1;
-    switch (ptype) {
-        case PseudoApp:
-            GET_MODULE(FreeCAD);
-            break;
-        case PseudoGui:
-            GET_MODULE(FreeCADGui);
-            break;
-        case PseudoPart:
-            GET_MODULE(Part);
-            break;
-        case PseudoCadquery:
-            GET_MODULE(freecad.fc_cadquery);
-            break;
-        case PseudoRegex:
-            GET_MODULE(re);
-            break;
-        case PseudoBuiltins:
-            GET_MODULE(builtins);
-            break;
-        case PseudoMath:
-            GET_MODULE(math);
-            break;
-        case PseudoCollections:
-            GET_MODULE(collections);
-            break;
-        case PseudoShape: {
-            GET_MODULE(Part);
-            Py::Callable func(pyobj.getAttr("getShape"));
-            Py::Tuple tuple(1);
-            tuple.setItem(0, Py::Object(result.resolvedDocumentObject->getPyObject(), true));
-            if (result.subObjectName.getString().empty()) {
-                pyobj = func.apply(tuple);
-            }
-            else {
-                Py::Dict dict;
-                dict.setItem("subname", Py::String(result.subObjectName.getString()));
-                dict.setItem("needSubElement", Py::True());
-                pyobj = func.apply(tuple, dict);
-            }
-            break;
-        }
-        default: {
-            Base::Matrix4D mat;
-            auto obj = result.resolvedDocumentObject;
-            switch (ptype) {
-                case PseudoPlacement:
-                case PseudoMatrix:
-                case PseudoLinkPlacement:
-                case PseudoLinkMatrix:
-                    obj->getSubObject(result.subObjectName.getString().c_str(), nullptr, &mat);
-                    break;
-                default:
-                    break;
-            }
-            if (result.resolvedSubObject) {
-                obj = result.resolvedSubObject;
-            }
-            switch (ptype) {
-                case PseudoPlacement:
-                    pyobj = Py::Placement(Base::Placement(mat));
-                    break;
-                case PseudoMatrix:
-                    pyobj = Py::Matrix(mat);
-                    break;
-                case PseudoLinkPlacement:
-                case PseudoLinkMatrix: {
-                    auto linked = obj->getLinkedObject(true, &mat, false);
-                    if (!linked || linked == obj) {
-                        auto ext = obj->getExtensionByType<App::LinkBaseExtension>(true);
-                        if (ext) {
-                            ext->getTrueLinkedObject(true, &mat);
-                        }
-                    }
-                    if (ptype == PseudoLinkPlacement) {
-                        pyobj = Py::Placement(Base::Placement(mat));
-                    }
-                    else {
-                        pyobj = Py::Matrix(mat);
-                    }
-                    break;
-                }
-                case PseudoSelf:
-                    pyobj = Py::Object(obj->getPyObject(), true);
-                    break;
-                default: {
-                    // NOTE! We cannot directly call Property::getPyObject(), but
-                    // instead, must obtain the property's python object through
-                    // DocumentObjectPy::getAttr(). Because, PyObjectBase has internal
-                    // attribute tracking only if we obtain attribute through
-                    // getAttr(). Without attribute tracking, we can't do things like
-                    //
-                    //      obj.Placement.Base.x = 10.
-                    //
-                    // What happens is that the when Python interpreter calls
-                    //
-                    //      Base.setAttr('x', 10),
-                    //
-                    // PyObjectBase will lookup Base's parent, i.e. Placement, and call
-                    //
-                    //      Placement.setAttr('Base', Base),
-                    //
-                    // and in turn calls
-                    //
-                    //      obj.setAttr('Placement',Placement)
-                    //
-                    // The tracking logic is implemented in PyObjectBase::__getattro/__setattro
-
-                    auto container = result.resolvedProperty->getContainer();
-                    if (container && container != result.resolvedDocumentObject
-                        && container != result.resolvedSubObject) {
-                        if (!container->isDerivedFrom<DocumentObject>()) {
-                            FC_WARN("Invalid property container");
-                        }
-                        else {
-                            obj = static_cast<DocumentObject*>(container);
-                        }
-                    }
-                    pyobj = Py::Object(obj->getPyObject(), true);
-                    idx = result.propertyIndex;
-                    break;
-                }
-            }
-        }
-    }
-
-    auto setPropDep = [deps](DocumentObject* obj, Property* prop, const char* propName) {
-        if (!deps || !obj) {
-            return;
-        }
-        if (prop && prop->getContainer() != obj) {
-            auto linkTouched =
-                freecad_cast<PropertyBool*>(obj->getPropertyByName("_LinkTouched"));
-            if (linkTouched) {
-                propName = linkTouched->getName();
-            }
-            else {
-                auto propOwner = freecad_cast<DocumentObject*>(prop->getContainer());
-                if (propOwner) {
-                    obj = propOwner;
-                }
-                else {
-                    propName = nullptr;
-                }
-            }
-        }
-        auto& propset = (*deps)[obj];
-        // inserting a blank name in the propset indicates the dependency is
-        // on all properties of the corresponding object.
-        if (propset.size() != 1 || !propset.begin()->empty()) {
-            if (!propName) {
-                propset.clear();
-                propset.insert("");
-            }
-            else {
-                propset.insert(propName);
-            }
-        }
-        return;
-    };
-
-    App::DocumentObject* lastObj = result.resolvedDocumentObject;
-    if (result.resolvedSubObject) {
-        setPropDep(lastObj, nullptr, nullptr);
-        lastObj = result.resolvedSubObject;
-    }
-    if (ptype == PseudoNone) {
-        setPropDep(lastObj, result.resolvedProperty, result.resolvedProperty->getName());
-    }
-    else {
-        setPropDep(lastObj, nullptr, nullptr);
-    }
-    lastObj = nullptr;
-
-    if (components.empty()) {
-        return pyobj;
-    }
-
-    size_t count = components.size();
-    if (value) {
-        --count;
-    }
-    assert(idx <= count);
-
-    for (; idx < count; ++idx) {
-        if (PyObject_TypeCheck(*pyobj, &DocumentObjectPy::Type)) {
-            lastObj = static_cast<DocumentObjectPy*>(*pyobj)->getDocumentObjectPtr();
-        }
-        else if (lastObj) {
-            const char* attr = components[idx].getName().c_str();
-            auto prop = lastObj->getPropertyByName(attr);
-            setPropDep(lastObj, prop, attr);
-            lastObj = nullptr;
-        }
-        pyobj = components[idx].get(pyobj);
-    }
-    if (value) {
-        components[idx].set(pyobj, *value);
-        return Py::Object();
-    }
-    return pyobj;
-}
-
 App::any ObjectIdentifier::getValue(bool pathValue, bool* isPseudoProperty) const
 {
     ResolveResults rs(*this);
@@ -1697,61 +1345,11 @@ App::any ObjectIdentifier::getValue(bool pathValue, bool* isPseudoProperty) cons
         return rs.resolvedProperty->getPathValue(*this);
     }
 
-    Base::PyGILStateLocker lock;
-    try {
-        return pyObjectToAny(access(rs));
-    }
-    catch (Py::Exception&) {
-        Base::PyException::throwException();
-    }
     return {};
 }
 
-Py::Object ObjectIdentifier::getPyValue(bool pathValue, bool* isPseudoProperty) const
+void ObjectIdentifier::setValue(const App::any&) const
 {
-    ResolveResults rs(*this);
-
-    if (isPseudoProperty) {
-        *isPseudoProperty = rs.propertyType != PseudoNone;
-        if (rs.propertyType == PseudoSelf && isLocalProperty()
-            && rs.propertyIndex + 1 < (int)components.size()
-            && owner->getPropertyByName(components[rs.propertyIndex + 1].getName().c_str())) {
-            *isPseudoProperty = false;
-        }
-    }
-
-    if (rs.resolvedProperty && rs.propertyType == PseudoNone && pathValue) {
-        Py::Object res;
-        if (rs.resolvedProperty->getPyPathValue(*this, res)) {
-            return res;
-        }
-    }
-
-    try {
-        return access(rs);
-    }
-    catch (Py::Exception&) {
-        Base::PyException::throwException();
-    }
-    return Py::Object();
-}
-
-void ObjectIdentifier::setValue(const App::any& value) const
-{
-    std::stringstream ss;
-    ResolveResults rs(*this);
-    if (rs.propertyType) {
-        FC_THROWM(Base::RuntimeError, "Cannot set pseudo property");
-    }
-
-    Base::PyGILStateLocker lock;
-    try {
-        Py::Object pyvalue = pyObjectFromAny(value);
-        access(rs, &pyvalue);
-    }
-    catch (Py::Exception&) {
-        Base::PyException::throwException();
-    }
 }
 
 const std::string& ObjectIdentifier::getSubObjectName(bool newStyle) const

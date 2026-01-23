@@ -39,7 +39,6 @@
 #include <QEvent>
 #include <QAction>
 #include <Base/BaseClass.h>
-#include <Base/SmartPtrPy.h>
 #include <Gui/Namespace.h>
 #include <FCGlobal.h>
 #include <memory>
@@ -223,8 +222,6 @@ public:
 
     std::optional<SbVec2s>& getRightClickPosition();
 
-    PyObject* getPyObject() override;
-
 protected:
     void initialize();
     void finalize();
@@ -326,8 +323,6 @@ protected:
     SbRotation spinincrement;
     SbSphereSheetProjector* spinprojector;
     //@}
-
-    Py::SmartPtr pythonObject;
 
     // store the position where right-click occurred just before
     // the menu popped up

@@ -66,8 +66,6 @@ public:
     void setOverrideCursor(const QCursor&) override;
     bool containsViewProvider(const ViewProvider*) const override;
 
-    PyObject* getPyObject() override;
-    void setPyObject(PyObject*) override;
     int getSize();
 
 protected:

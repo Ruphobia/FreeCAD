@@ -24,8 +24,6 @@
 #ifndef GUI_ONLINEDOCUMENTATION_H
 #define GUI_ONLINEDOCUMENTATION_H
 
-#include <functional>
-#include <CXX/Objects.hxx>
 #include <QObject>
 #include <QTcpServer>
 #include "Command.h"
@@ -58,8 +56,6 @@ private:
     QByteArray loadFavicon() const;
     QByteArray loadIndexPage() const;
     QByteArray loadHelpPage(const QString& filename) const;
-    QByteArray invoke(const std::function<std::string(Py::Module&)>& func) const;
-    QByteArray tryInvoke(const std::function<std::string(Py::Module&)>& func) const;
 };
 
 /**

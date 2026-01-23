@@ -38,7 +38,6 @@
 #include "Navigation/NavigationStyle.h"
 #include "SoFCSelectionAction.h"
 #include "View3DInventorViewer.h"
-#include "View3DPy.h"
 #include "View3DSettings.h"
 
 
@@ -264,11 +263,7 @@ void AbstractSplitView::setOverrideCursor(const QCursor& aCursor)
 
 PyObject* AbstractSplitView::getPyObject()
 {
-    if (!_viewerPy) {
-        _viewerPy = new AbstractSplitViewPy(this);
-    }
-    Py_INCREF(_viewerPy);
-    return _viewerPy;
+    Py_Return;
 }
 
 void AbstractSplitView::setPyObject(PyObject*)

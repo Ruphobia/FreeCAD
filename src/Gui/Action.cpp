@@ -48,7 +48,6 @@
 #include "Macro.h"
 #include "ModuleIO.h"
 #include "MainWindow.h"
-#include "PythonEditor.h"
 #include "WhatsThis.h"
 #include "Widgets.h"
 #include "Workbench.h"
@@ -1199,15 +1198,8 @@ void RecentMacrosAction::activateFile(int id)
     else {
         if (QApplication::keyboardModifiers()
             == Qt::ShiftModifier) {  // open for editing on Shift+click
-            auto editor = new PythonEditor();
-            editor->setWindowIcon(Gui::BitmapFactory().iconFromTheme("applications-python"));
-            auto edit = new PythonEditorView(editor, getMainWindow());
-            edit->setDisplayName(PythonEditorView::FileName);
-            edit->open(filename);
-            edit->resize(400, 300);
-            getMainWindow()->addWindow(edit);
+            // PythonEditor no longer available
             getMainWindow()->appendRecentMacro(filename);
-            edit->setWindowTitle(fi.fileName());
         }
         else {  // execute macro on normal (non-shifted) click
             try {

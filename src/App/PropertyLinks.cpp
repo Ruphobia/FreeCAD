@@ -36,7 +36,6 @@
 #include "Application.h"
 #include "Document.h"
 #include "DocumentObject.h"
-#include "DocumentObjectPy.h"
 #include "DocumentObserver.h"
 #include "ObjectIdentifier.h"
 #include "ElementNamingUtils.h"
@@ -767,27 +766,7 @@ App::DocumentObject* PropertyLink::getValue(Base::Type t) const
     return (_pcLink && _pcLink->isDerivedFrom(t)) ? _pcLink : nullptr;
 }
 
-PyObject* PropertyLink::getPyObject()
-{
-    if (_pcLink) {
-        return _pcLink->getPyObject();
-    }
-    else {
-        Py_Return;
-    }
-}
 
-void PropertyLink::setPyObject(PyObject* value)
-{
-    Base::PyTypeCheck(&value, &DocumentObjectPy::Type);
-    if (value) {
-        DocumentObjectPy* pcObject = static_cast<DocumentObjectPy*>(value);
-        setValue(pcObject->getDocumentObjectPtr());
-    }
-    else {
-        setValue(nullptr);
-    }
-}
 
 void PropertyLink::Save(Base::Writer& writer) const
 {
@@ -1032,33 +1011,7 @@ void PropertyLinkList::setValues(const std::vector<DocumentObject*>& value)
     inherited::setValues(value);
 }
 
-PyObject* PropertyLinkList::getPyObject()
-{
-    int count = getSize();
-#if 0  // FIXME: Should switch to tuple
-    Py::Tuple sequence(count);
-#else
-    Py::List sequence(count);
-#endif
-    for (int i = 0; i < count; i++) {
-        auto obj = _lValueList[i];
-        if (obj && obj->isAttachedToDocument()) {
-            sequence.setItem(i, Py::asObject(_lValueList[i]->getPyObject()));
-        }
-        else {
-            sequence.setItem(i, Py::None());
-        }
-    }
 
-    return Py::new_reference_to(sequence);
-}
-
-DocumentObject* PropertyLinkList::getPyValue(PyObject* item) const
-{
-    Base::PyTypeCheck(&item, &DocumentObjectPy::Type);
-
-    return item ? static_cast<DocumentObjectPy*>(item)->getDocumentObjectPtr() : nullptr;
-}
 
 void PropertyLinkList::Save(Base::Writer& writer) const
 {
@@ -1450,83 +1403,7 @@ App::DocumentObject* PropertyLinkSub::getValue(Base::Type t) const
     return (_pcLinkSub && _pcLinkSub->isDerivedFrom(t)) ? _pcLinkSub : nullptr;
 }
 
-PyObject* PropertyLinkSub::getPyObject()
-{
-    Py::Tuple tup(2);
-    Py::List list(static_cast<int>(_cSubList.size()));
-    if (_pcLinkSub) {
-        tup[0] = Py::asObject(_pcLinkSub->getPyObject());
-        int i = 0;
-        for (auto& sub : getSubValues(testFlag(LinkNewElement))) {
-            list[i++] = Py::String(sub);
-        }
-        tup[1] = list;
-        return Py::new_reference_to(tup);
-    }
-    else {
-        return Py::new_reference_to(Py::None());
-    }
-}
 
-void PropertyLinkSub::setPyObject(PyObject* value)
-{
-    if (PyObject_TypeCheck(value, &(DocumentObjectPy::Type))) {
-        DocumentObjectPy* pcObject = static_cast<DocumentObjectPy*>(value);
-        setValue(pcObject->getDocumentObjectPtr());
-    }
-    else if (PyTuple_Check(value) || PyList_Check(value)) {
-        Py::Sequence seq(value);
-        if (seq.size() == 0) {
-            setValue(nullptr);
-        }
-        else if (seq.size() != 2) {
-            throw Base::ValueError("Expect input sequence of size 2");
-        }
-        else if (PyObject_TypeCheck(seq[0].ptr(), &(DocumentObjectPy::Type))) {
-            DocumentObjectPy* pcObj = static_cast<DocumentObjectPy*>(seq[0].ptr());
-            static const char* errMsg =
-                "type of second element in tuple must be str or sequence of str";
-            PropertyString propString;
-            if (seq[1].isString()) {
-                std::vector<std::string> vals;
-                propString.setPyObject(seq[1].ptr());
-                vals.emplace_back(propString.getValue());
-                setValue(pcObj->getDocumentObjectPtr(), std::move(vals));
-            }
-            else if (seq[1].isSequence()) {
-                Py::Sequence list(seq[1]);
-                std::vector<std::string> vals(list.size());
-                unsigned int i = 0;
-                for (Py::Sequence::iterator it = list.begin(); it != list.end(); ++it, ++i) {
-                    if (!(*it).isString()) {
-                        throw Base::TypeError(errMsg);
-                    }
-                    propString.setPyObject((*it).ptr());
-                    vals[i] = propString.getValue();
-                }
-                setValue(pcObj->getDocumentObjectPtr(), std::move(vals));
-            }
-            else {
-                throw Base::TypeError(errMsg);
-            }
-        }
-        else {
-            std::string error =
-                std::string("type of first element in tuple must be 'DocumentObject', not ");
-            error += seq[0].ptr()->ob_type->tp_name;
-            throw Base::TypeError(error);
-        }
-    }
-    else if (Py_None == value) {
-        setValue(nullptr);
-    }
-    else {
-        std::string error = std::string(
-            "type must be 'DocumentObject', 'NoneType' or ('DocumentObject',['String',]) not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
-    }
-}
 
 static bool updateLinkReference(App::PropertyLinkBase* prop,
                                 App::DocumentObject* feature,
@@ -2627,108 +2504,7 @@ std::vector<PropertyLinkSubList::SubSet> PropertyLinkSubList::getSubListValues(b
     return values;
 }
 
-PyObject* PropertyLinkSubList::getPyObject()
-{
-    std::vector<SubSet> subLists = getSubListValues();
-    std::size_t count = subLists.size();
-#if 0  // FIXME: Should switch to tuple
-    Py::Tuple sequence(count);
-#else
-    Py::List sequence(count);
-#endif
-    for (std::size_t i = 0; i < count; i++) {
-        Py::Tuple tup(2);
-        tup[0] = Py::asObject(subLists[i].first->getPyObject());
 
-        const std::vector<std::string>& sub = subLists[i].second;
-        Py::Tuple items(sub.size());
-        for (std::size_t j = 0; j < sub.size(); j++) {
-            items[j] = Py::String(sub[j]);
-        }
-
-        tup[1] = items;
-        sequence[i] = tup;
-    }
-
-    return Py::new_reference_to(sequence);
-}
-
-void PropertyLinkSubList::setPyObject(PyObject* value)
-{
-    try {  // try PropertyLinkSub syntax
-        PropertyLinkSub dummy;
-        dummy.setPyObject(value);
-        this->setValue(dummy.getValue(), dummy.getSubValues());
-        return;
-    }
-    catch (...) {
-    }
-    try {
-        // try PropertyLinkList syntax
-        PropertyLinkList dummy;
-        dummy.setPyObject(value);
-        const auto& values = dummy.getValues();
-        std::vector<std::string> subs(values.size());
-        this->setValues(values, subs);
-        return;
-    }
-    catch (...) {
-    }
-
-    static const char* errMsg =
-        "Expects sequence of items of type DocObj, (DocObj,SubName), or (DocObj, (SubName,...))";
-
-    if (!PyTuple_Check(value) && !PyList_Check(value)) {
-        throw Base::TypeError(errMsg);
-    }
-
-    Py::Sequence list(value);
-    Py::Sequence::size_type size = list.size();
-
-    std::vector<DocumentObject*> values;
-    values.reserve(size);
-    std::vector<std::string> SubNames;
-    SubNames.reserve(size);
-    for (Py::Sequence::size_type i = 0; i < size; i++) {
-        Py::Object item = list[i];
-        if ((item.isTuple() || item.isSequence()) && PySequence_Size(*item) == 2) {
-            Py::Sequence seq(item);
-            if (PyObject_TypeCheck(seq[0].ptr(), &(DocumentObjectPy::Type))) {
-                auto obj = static_cast<DocumentObjectPy*>(seq[0].ptr())->getDocumentObjectPtr();
-                PropertyString propString;
-                if (seq[1].isString()) {
-                    values.push_back(obj);
-                    propString.setPyObject(seq[1].ptr());
-                    SubNames.emplace_back(propString.getValue());
-                }
-                else if (seq[1].isSequence()) {
-                    Py::Sequence list(seq[1]);
-                    for (Py::Sequence::iterator it = list.begin(); it != list.end(); ++it) {
-                        if (!(*it).isString()) {
-                            throw Base::TypeError(errMsg);
-                        }
-                        values.push_back(obj);
-                        propString.setPyObject((*it).ptr());
-                        SubNames.emplace_back(propString.getValue());
-                    }
-                }
-                else {
-                    throw Base::TypeError(errMsg);
-                }
-            }
-        }
-        else if (PyObject_TypeCheck(*item, &(DocumentObjectPy::Type))) {
-            DocumentObjectPy* pcObj;
-            pcObj = static_cast<DocumentObjectPy*>(*item);
-            values.push_back(pcObj->getDocumentObjectPtr());
-            SubNames.emplace_back();
-        }
-        else {
-            throw Base::TypeError(errMsg);
-        }
-    }
-    setValues(values, SubNames);
-}
 
 void PropertyLinkSubList::afterRestore()
 {
@@ -4571,86 +4347,7 @@ PropertyXLink::getDocumentInList(App::Document* doc)
     return ret;
 }
 
-PyObject* PropertyXLink::getPyObject()
-{
-    if (!_pcLink) {
-        Py_Return;
-    }
-    const auto& subs = getSubValues(false);
-    if (subs.empty()) {
-        return _pcLink->getPyObject();
-    }
-    Py::Tuple ret(2);
-    ret.setItem(0, Py::Object(_pcLink->getPyObject(), true));
-    PropertyString propString;
-    if (subs.size() == 1) {
-        propString.setValue(subs.front());
-        ret.setItem(1, Py::asObject(propString.getPyObject()));
-    }
-    else {
-        Py::List list(subs.size());
-        int i = 0;
-        for (auto& sub : subs) {
-            propString.setValue(sub);
-            list[i++] = Py::asObject(propString.getPyObject());
-        }
-        ret.setItem(1, list);
-    }
-    return Py::new_reference_to(ret);
-}
 
-void PropertyXLink::setPyObject(PyObject* value)
-{
-    if (PySequence_Check(value)) {
-        Py::Sequence seq(value);
-        if (seq.size() != 2) {
-            throw Base::ValueError("Expect input sequence of size 2");
-        }
-        std::vector<std::string> subs;
-        Py::Object pyObj(seq[0].ptr());
-        Py::Object pySub(seq[1].ptr());
-        if (pyObj.isNone()) {
-            setValue(nullptr);
-            return;
-        }
-        else if (!PyObject_TypeCheck(pyObj.ptr(), &DocumentObjectPy::Type)) {
-            throw Base::TypeError("Expect the first element to be of 'DocumentObject'");
-        }
-        PropertyString propString;
-        if (pySub.isString()) {
-            propString.setPyObject(pySub.ptr());
-            subs.push_back(propString.getStrValue());
-        }
-        else if (pySub.isSequence()) {
-            Py::Sequence seq(pySub);
-            subs.reserve(seq.size());
-            for (Py_ssize_t i = 0; i < seq.size(); ++i) {
-                Py::Object sub(seq[i]);
-                if (!sub.isString()) {
-                    throw Base::TypeError("Expect only string inside second argument");
-                }
-                propString.setPyObject(sub.ptr());
-                subs.push_back(propString.getStrValue());
-            }
-        }
-        else {
-            throw Base::TypeError("Expect the second element to be a string or sequence of string");
-        }
-        setValue(static_cast<DocumentObjectPy*>(pyObj.ptr())->getDocumentObjectPtr(),
-                 std::move(subs));
-    }
-    else if (PyObject_TypeCheck(value, &(DocumentObjectPy::Type))) {
-        setValue(static_cast<DocumentObjectPy*>(value)->getDocumentObjectPtr());
-    }
-    else if (Py_None == value) {
-        setValue(nullptr);
-    }
-    else {
-        throw Base::TypeError(
-            "type must be 'DocumentObject', 'None', or '(DocumentObject, SubName)' or "
-            "'DocumentObject, [SubName..])");
-    }
-}
 
 const char* PropertyXLink::getSubName(bool newStyle) const
 {
@@ -4779,24 +4476,6 @@ bool PropertyXLinkSub::upgrade(Base::XMLReader& reader, const char* typeName)
     return PropertyXLink::upgrade(reader, typeName);
 }
 
-PyObject* PropertyXLinkSub::getPyObject()
-{
-    if (!_pcLink) {
-        Py_Return;
-    }
-    Py::Tuple ret(2);
-    ret.setItem(0, Py::Object(_pcLink->getPyObject(), true));
-    const auto& subs = getSubValues(false);
-    Py::List list(subs.size());
-    int i = 0;
-    PropertyString propString;
-    for (auto& sub : subs) {
-        propString.setValue(sub);
-        list[i++] = Py::asObject(propString.getPyObject());
-    }
-    ret.setItem(1, list);
-    return Py::new_reference_to(ret);
-}
 
 //**************************************************************************
 // PropertyXLinkSubList
@@ -5054,64 +4733,7 @@ int PropertyXLinkSubList::removeValue(App::DocumentObject* lValue)
     return ret;
 }
 
-PyObject* PropertyXLinkSubList::getPyObject()
-{
-    Py::List list;
-    for (auto& link : _Links) {
-        auto obj = link.getValue();
-        if (!obj || !obj->isAttachedToDocument()) {
-            continue;
-        }
 
-        Py::Tuple tup(2);
-        tup[0] = Py::asObject(obj->getPyObject());
-
-        const auto& subs = link.getSubValues();
-        Py::Tuple items(subs.size());
-        for (std::size_t j = 0; j < subs.size(); j++) {
-            items[j] = Py::String(subs[j]);
-        }
-        tup[1] = items;
-        list.append(tup);
-    }
-    return Py::new_reference_to(list);
-}
-
-void PropertyXLinkSubList::setPyObject(PyObject* value)
-{
-    try {  // try PropertyLinkSub syntax
-        PropertyLinkSub dummy;
-        dummy.setAllowExternal(true);
-        dummy.setPyObject(value);
-        this->setValue(dummy.getValue(), dummy.getSubValues());
-        return;
-    }
-    catch (Base::Exception&) {
-    }
-
-    if (!PyTuple_Check(value) && !PyList_Check(value)) {
-        throw Base::TypeError(
-            "Invalid type. Accepts (DocumentObject, (subname...)) or sequence of such type.");
-    }
-    Py::Sequence seq(value);
-    std::map<DocumentObject*, std::vector<std::string>> values;
-    try {
-        for (Py_ssize_t i = 0; i < seq.size(); ++i) {
-            PropertyLinkSub link;
-            link.setAllowExternal(true);
-            link.setPyObject(seq[i].ptr());
-            const auto& subs = link.getSubValues();
-            auto& s = values[link.getValue()];
-            s.reserve(s.size() + subs.size());
-            s.insert(s.end(), subs.begin(), subs.end());
-        }
-    }
-    catch (Base::Exception&) {
-        throw Base::TypeError(
-            "Invalid type inside sequence. Must be type of (DocumentObject, (subname...))");
-    }
-    setValues(std::move(values));
-}
 
 void PropertyXLinkSubList::afterRestore()
 {
@@ -5635,43 +5257,7 @@ PropertyXLinkList::PropertyXLinkList() = default;
 
 PropertyXLinkList::~PropertyXLinkList() = default;
 
-PyObject* PropertyXLinkList::getPyObject()
-{
-    for (auto& link : _Links) {
-        auto obj = link.getValue();
-        if (!obj || !obj->isAttachedToDocument()) {
-            continue;
-        }
-        if (link.hasSubName()) {
-            return PropertyXLinkSubList::getPyObject();
-        }
-    }
 
-    Py::List list;
-    for (auto& link : _Links) {
-        auto obj = link.getValue();
-        if (!obj || !obj->isAttachedToDocument()) {
-            continue;
-        }
-        list.append(Py::asObject(obj->getPyObject()));
-    }
-    return Py::new_reference_to(list);
-}
-
-void PropertyXLinkList::setPyObject(PyObject* value)
-{
-    try {  // try PropertyLinkList syntax
-        PropertyLinkList dummy;
-        dummy.setAllowExternal(true);
-        dummy.setPyObject(value);
-        this->setValues(dummy.getValues());
-        return;
-    }
-    catch (Base::Exception&) {
-    }
-
-    PropertyXLinkSubList::setPyObject(value);
-}
 
 //**************************************************************************
 // PropertyXLinkContainer

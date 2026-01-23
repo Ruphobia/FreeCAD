@@ -22,8 +22,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <App/GeoFeaturePy.h>
-
 #include <Base/Tools.h>
 
 #include "ComplexGeoData.h"
@@ -73,14 +71,6 @@ const PropertyComplexGeoData* GeoFeature::getPropertyOfGeometry() const
     return nullptr;
 }
 
-PyObject* GeoFeature::getPyObject()
-{
-    if (PythonObject.is(Py::_None())) {
-        // ref counter is set to 1
-        PythonObject = Py::Object(new GeoFeaturePy(this), true);
-    }
-    return Py::new_reference_to(PythonObject);
-}
 
 ElementNamePair GeoFeature::getElementName(const char* name, ElementNameType type) const
 {

@@ -23,8 +23,6 @@
  **************************************************************************/
 
 #include <Base/Console.h>
-#include <Base/Interpreter.h>
-#include <Base/VectorPy.h>
 #include <App/Document.h>
 #include <App/Link.h>
 
@@ -110,7 +108,7 @@ void MeasureManager::addMeasureType(std::string id,
                                     MeasurePrioritizeMethod prioritizeCb)
 {
     MeasureType* mType =
-        new MeasureType {id, label, measureObj, validatorCb, prioritizeCb, false, nullptr};
+        new MeasureType {id, label, measureObj, validatorCb, prioritizeCb, false};
     _mMeasureTypes.push_back(mType);
 }
 
@@ -133,39 +131,11 @@ const std::vector<MeasureType*> MeasureManager::getMeasureTypes()
 }
 
 
-Py::Tuple MeasureManager::getSelectionPy(const App::MeasureSelection& selection)
-{
-    // Convert selection to python list
-    Py::Tuple selectionPy(selection.size());
-
-    int i = 0;
-    for (auto it : selection) {
-
-        Py::Dict sel;
-        sel.setItem("object", Py::asObject(it.object.getObject()->getPyObject()));
-        sel.setItem("subName", Py::String(it.object.getSubName()));
-        sel.setItem("pickedPoint", Py::asObject(new Base::VectorPy(it.pickedPoint)));
-
-        selectionPy.setItem(i, sel);
-
-        i++;
-    }
-    return selectionPy;
-}
-
-
 std::vector<MeasureType*> MeasureManager::getValidMeasureTypes(App::MeasureSelection selection,
                                                                std::string mode)
 {
-    Base::PyGILStateLocker lock;
-
-    // Convert selection to python list
-    Py::Tuple selectionPy = getSelectionPy(selection);
-
     // Store valid measure types
     std::vector<MeasureType*> validTypes;
-    std::pair<int, MeasureType>();
-
 
     // Loop through measure types and check if they work with given selection
     for (App::MeasureType* mType : getMeasureTypes()) {
@@ -174,46 +144,7 @@ std::vector<MeasureType*> MeasureManager::getValidMeasureTypes(App::MeasureSelec
             continue;
         }
 
-
-        if (mType->isPython) {
-            // Parse Python measure types
-            auto measurePyClass = Py::Object(mType->pythonClass);
-
-            Py::Tuple args(1);
-            args.setItem(0, selectionPy);
-
-            Py::Object isValid;
-            try {
-                isValid = measurePyClass.callMemberFunction(std::string("isValidSelection"), args);
-            }
-            catch (const Py::Exception&) {
-                Base::PyException e;
-                e.reportException();
-                isValid = Py::False();
-            }
-
-            if (isValid.as_bool()) {
-
-                // Check priority
-                Py::Object isPriority;
-                try {
-                    isPriority = measurePyClass.callMemberFunction("isPrioritySelection", args);
-                }
-                catch (const Py::Exception&) {
-                    Base::PyException e;
-                    e.reportException();
-                    isPriority = Py::False();
-                }
-
-                if (isPriority.as_bool()) {
-                    validTypes.insert(validTypes.begin(), mType);
-                }
-                else {
-                    validTypes.push_back(mType);
-                }
-            }
-        }
-        else {
+        if (!mType->isPython) {
             // Parse c++ measure types
 
             if (mType->validatorCb && !mType->validatorCb(selection)) {
