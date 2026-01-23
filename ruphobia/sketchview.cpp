@@ -1,9 +1,8 @@
 #include "sketchview.h"
+#include "dimensionitem.h"
 #include <QPainter>
 #include <QtMath>
 #include <QScrollBar>
-#include <QGraphicsTextItem>
-#include <QFont>
 #include <limits>
 
 SketchView::SketchView(QWidget* parent)
@@ -72,60 +71,15 @@ void SketchView::finishCurrentOperation()
 }
 
 static void addDimensionAnnotation(QGraphicsScene* scene, const QPointF& p1, const QPointF& p2,
-                                   const QPen& pen)
+                                   const QPen& pen, QGraphicsItem* sourceItem,
+                                   DimensionItem::GeomType geomType, int edgeIndex = 0)
 {
     double distance = QLineF(p1, p2).length();
     if (distance < 0.01)
         return;
 
-    // Offset the dimension line from the geometry
-    QPointF dir = p2 - p1;
-    QPointF normal(-dir.y(), dir.x());
-    double normalLen = qSqrt(normal.x() * normal.x() + normal.y() * normal.y());
-    if (normalLen > 0) {
-        normal /= normalLen;
-    }
-    double offset = 15.0;
-    QPointF d1 = p1 + normal * offset;
-    QPointF d2 = p2 + normal * offset;
-
-    // Main dimension line
-    scene->addLine(QLineF(d1, d2), pen);
-
-    // Extension lines (from geometry to dimension line)
-    QPen extPen(pen);
-    extPen.setStyle(Qt::DotLine);
-    scene->addLine(QLineF(p1, d1 + normal * 3), extPen);
-    scene->addLine(QLineF(p2, d2 + normal * 3), extPen);
-
-    // Arrowheads
-    double arrowSize = 6.0;
-    QPointF lineDir = (d2 - d1);
-    double lineLen = qSqrt(lineDir.x() * lineDir.x() + lineDir.y() * lineDir.y());
-    if (lineLen > 0)
-        lineDir /= lineLen;
-    QPointF lineNorm(-lineDir.y(), lineDir.x());
-
-    // Arrow at d1 (pointing toward d2)
-    QPointF a1 = d1 + lineDir * arrowSize + lineNorm * (arrowSize * 0.4);
-    QPointF a2 = d1 + lineDir * arrowSize - lineNorm * (arrowSize * 0.4);
-    scene->addLine(QLineF(d1, a1), pen);
-    scene->addLine(QLineF(d1, a2), pen);
-
-    // Arrow at d2 (pointing toward d1)
-    QPointF b1 = d2 - lineDir * arrowSize + lineNorm * (arrowSize * 0.4);
-    QPointF b2 = d2 - lineDir * arrowSize - lineNorm * (arrowSize * 0.4);
-    scene->addLine(QLineF(d2, b1), pen);
-    scene->addLine(QLineF(d2, b2), pen);
-
-    // Distance text
-    QPointF midpoint = (d1 + d2) / 2.0 + normal * 5.0;
-    auto* text = scene->addText(QString::number(distance, 'f', 1),
-                                QFont("Sans", 8));
-    text->setDefaultTextColor(pen.color());
-    text->setPos(midpoint);
-    // Scale text to scene coordinates (cosmetic-like)
-    text->setTransformOriginPoint(text->boundingRect().center());
+    auto* dim = new DimensionItem(p1, p2, pen, sourceItem, geomType, edgeIndex);
+    scene->addItem(dim);
 }
 
 void SketchView::mousePressEvent(QMouseEvent* event)
@@ -272,14 +226,17 @@ void SketchView::mousePressEvent(QMouseEvent* event)
 
         // Find the nearest edge and dimension it
         for (auto* item : hitItems) {
+            // Skip dimension items themselves
+            if (dynamic_cast<DimensionItem*>(item))
+                continue;
+
             if (auto* lineItem = dynamic_cast<QGraphicsLineItem*>(item)) {
-                // Dimension a line
                 QLineF line = lineItem->line();
-                addDimensionAnnotation(m_scene, line.p1(), line.p2(), m_dimensionPen);
+                addDimensionAnnotation(m_scene, line.p1(), line.p2(), m_dimensionPen,
+                                       lineItem, DimensionItem::GeomType::Line);
                 break;
             }
             if (auto* rectItem = dynamic_cast<QGraphicsRectItem*>(item)) {
-                // Find which edge of the rectangle is closest to the click
                 QRectF r = rectItem->rect();
                 QLineF edges[4] = {
                     QLineF(r.topLeft(), r.topRight()),       // top
@@ -290,7 +247,6 @@ void SketchView::mousePressEvent(QMouseEvent* event)
                 double minDist = std::numeric_limits<double>::max();
                 int closest = 0;
                 for (int i = 0; i < 4; i++) {
-                    // Distance from point to line segment
                     QPointF a = edges[i].p1();
                     QPointF b = edges[i].p2();
                     QPointF ap = scenePos - a;
@@ -305,29 +261,29 @@ void SketchView::mousePressEvent(QMouseEvent* event)
                     }
                 }
                 addDimensionAnnotation(m_scene, edges[closest].p1(),
-                                       edges[closest].p2(), m_dimensionPen);
+                                       edges[closest].p2(), m_dimensionPen,
+                                       rectItem, DimensionItem::GeomType::RectEdge, closest);
                 break;
             }
             if (auto* ellipseItem = dynamic_cast<QGraphicsEllipseItem*>(item)) {
-                // Dimension a circle's radius
                 QRectF r = ellipseItem->rect();
                 double radius = r.width() / 2.0;
                 if (radius > 0.01) {
                     QPointF center = r.center();
                     QPointF edgePoint(center.x() + radius, center.y());
-                    addDimensionAnnotation(m_scene, center, edgePoint, m_dimensionPen);
+                    addDimensionAnnotation(m_scene, center, edgePoint, m_dimensionPen,
+                                           ellipseItem, DimensionItem::GeomType::Circle);
                 }
                 break;
             }
             if (auto* pathItem = dynamic_cast<QGraphicsPathItem*>(item)) {
-                // For paths (polylines, arcs), dimension the bounding width or the path length
                 QPainterPath path = pathItem->path();
                 if (path.elementCount() >= 2) {
-                    // Dimension from first to last point
                     QPointF start(path.elementAt(0).x, path.elementAt(0).y);
                     QPointF end(path.elementAt(path.elementCount() - 1).x,
                                 path.elementAt(path.elementCount() - 1).y);
-                    addDimensionAnnotation(m_scene, start, end, m_dimensionPen);
+                    addDimensionAnnotation(m_scene, start, end, m_dimensionPen,
+                                           pathItem, DimensionItem::GeomType::Line);
                 }
                 break;
             }
