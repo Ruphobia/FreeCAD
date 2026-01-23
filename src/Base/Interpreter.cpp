@@ -230,6 +230,8 @@ InterpreterSingleton::~InterpreterSingleton() = default;
 
 std::string InterpreterSingleton::runString(const char* sCmd)
 {
+    return {}; // Strip: no Python execution
+
     PyObject* module {};
     PyObject* dict {};
     PyObject* presult {};
@@ -283,6 +285,8 @@ std::string InterpreterSingleton::runStringWithKey(
     const char* key_initial_value
 )
 {
+    return {}; // Strip: no Python execution
+
     PyGILStateLocker locker;
     Py::Module module("__main__");
     Py::Dict globalDictionary = module.getDict();
@@ -314,6 +318,8 @@ std::string InterpreterSingleton::runStringWithKey(
 
 Py::Object InterpreterSingleton::runStringObject(const char* sCmd)
 {
+    return Py::None(); // Strip: no Python execution
+
     PyObject* module {};
     PyObject* dict {};
     PyObject* presult {};
@@ -389,6 +395,8 @@ done:
 
 void InterpreterSingleton::runInteractiveString(const char* sCmd)
 {
+    return; // Strip: no Python execution
+
     PyObject* module {};
     PyObject* dict {};
     PyObject* presult {};
@@ -433,6 +441,8 @@ void InterpreterSingleton::runInteractiveString(const char* sCmd)
 
 void InterpreterSingleton::runFile(const char* pxFileName, bool local)
 {
+    return; // Strip: no Python execution
+
 #ifdef FC_OS_WIN32
     FileInfo fi(pxFileName);
     FILE* fp = _wfopen(fi.toStdWString().c_str(), L"r");
@@ -486,6 +496,8 @@ void InterpreterSingleton::runFile(const char* pxFileName, bool local)
 
 bool InterpreterSingleton::loadModule(const char* psModName)
 {
+    return true; // Strip: no Python module loading
+
     PyObject* module {};
 
     PyGILStateLocker locker;
@@ -691,6 +703,8 @@ void InterpreterSingleton::finalize()
 
 void InterpreterSingleton::runStringArg(const char* psCom, ...)
 {
+    return; // Strip: no Python execution
+
     // va stuff
     va_list namelessVars;
     va_start(namelessVars, psCom);  // Get the "..." vars
@@ -738,6 +752,8 @@ int InterpreterSingleton::runCommandLine(const char* prompt)
  */
 void InterpreterSingleton::runMethodVoid(PyObject* pobject, const char* method)
 {
+    return; // Strip: no Python execution
+
     PyGILStateLocker locker;
     if (PP_Run_Method(
             pobject,  // object
@@ -779,6 +795,8 @@ void InterpreterSingleton::runMethod(
     ...
 ) /* convert to python */
 {
+    return; // Strip: no Python execution
+
     PyObject* pmeth {};
     PyObject* pargs {};
     PyObject* presult {};

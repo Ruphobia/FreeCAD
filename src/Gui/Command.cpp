@@ -768,6 +768,8 @@ void Command::printCaller(const char* file, int line)
 /// Run a App level Action
 void Command::_runCommand(const char* file, int line, DoCmd_Type eType, const char* sCmd)
 {
+    return; // Strip: no Python command execution
+
     LogDisabler d1;
     SelectionLogDisabler d2;
     Base::PyGILStateLocker lock;
