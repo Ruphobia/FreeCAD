@@ -1,6 +1,12 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/PartDesign_Body.svg</file>
+        <file>icons/PartDesign_Pad.svg</file>
+        <file>icons/PartDesign_Pocket.svg</file>
+        <file>icons/PartDesign_Revolution.svg</file>
+        <file>icons/PartDesign_AdditiveLoft.svg</file>
+        <file>icons/PartDesign_Fillet.svg</file>
+        <file>icons/PartDesign_Chamfer.svg</file>
         <file>icons/Sketcher_CreateLine.svg</file>
         <file>icons/Sketcher_CreateCircle.svg</file>
         <file>icons/Sketcher_CreateArc.svg</file>

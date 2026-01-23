@@ -388,6 +388,13 @@ void SketchView::keyPressEvent(QKeyEvent* event)
         event->accept();
         return;
     }
+    if (event->key() == Qt::Key_S && !event->isAutoRepeat()) {
+        finishCurrentOperation();
+        setTool(SketchTool::None);
+        emit exitSketchRequested();
+        event->accept();
+        return;
+    }
     if (event->key() == Qt::Key_Escape) {
         finishCurrentOperation();
         setTool(SketchTool::None);

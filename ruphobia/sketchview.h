@@ -36,6 +36,7 @@ public:
 
 signals:
     void toolChangeRequested(SketchTool tool);
+    void exitSketchRequested();
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;

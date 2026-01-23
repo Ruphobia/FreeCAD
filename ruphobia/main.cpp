@@ -2,19 +2,37 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
+#include <QInputDialog>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QToolBar>
 #include <QString>
+#include <QGraphicsRectItem>
+#include <QGraphicsEllipseItem>
 
 #include <zip.h>
 
+// OCCT
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Dir.hxx>
+#include <gp_Vec.hxx>
+#include <gp_Circ.hxx>
+#include <TopoDS_Shape.hxx>
+#include <TopoDS_Wire.hxx>
+#include <TopoDS_Face.hxx>
+
 #include "version.h"
 #include "sketchview.h"
+#include "occtview.h"
 
 static QToolBar* contextToolbar = nullptr;
 static SketchView* sketchCanvas = nullptr;
+static OcctView* viewer3d = nullptr;
 static QString currentAssemblyPath;
 
 static bool writeFCStd(const QString& path, const QString& objectType, const QString& objectName)
@@ -72,6 +90,7 @@ static bool writeFCStd(const QString& path, const QString& objectType, const QSt
 }
 
 static void enterSketchMode(QMainWindow* window);
+static void enterPartDesignMode(QMainWindow* window);
 static void enterAssemblyMode(QMainWindow* window);
 
 static void newPart(QMainWindow* window)
@@ -100,7 +119,8 @@ static void enterSketchMode(QMainWindow* window)
     }
 
     // Create sketch canvas if not already present
-    if (!sketchCanvas) {
+    bool firstTime = !sketchCanvas;
+    if (firstTime) {
         sketchCanvas = new SketchView(window);
     }
     window->setCentralWidget(sketchCanvas);
@@ -182,6 +202,150 @@ static void enterSketchMode(QMainWindow* window)
             a->setChecked(false);
         if (tool == SketchTool::Dimension) dimAction->setChecked(true);
     });
+
+    // S key exits sketch mode into Part Design mode (connect once)
+    if (firstTime) {
+        QObject::connect(sketchCanvas, &SketchView::exitSketchRequested, [window]() {
+            enterPartDesignMode(window);
+        });
+    }
+
+    window->addToolBar(contextToolbar);
+    contextToolbar->show();
+}
+
+// Convert sketch geometry to an OCCT face for extrusion
+static TopoDS_Face sketchToFace()
+{
+    TopoDS_Face face;
+    if (!sketchCanvas)
+        return face;
+
+    QGraphicsScene* scene = sketchCanvas->scene();
+    if (!scene)
+        return face;
+
+    // Find the first extrudable shape (rectangle or circle)
+    for (auto* item : scene->items()) {
+        if (auto* rectItem = dynamic_cast<QGraphicsRectItem*>(item)) {
+            QRectF r = rectItem->rect();
+            // Convert to OCCT: sketch Y is flipped (screen coords), use XY plane
+            gp_Pnt p1(r.left(), -r.top(), 0);
+            gp_Pnt p2(r.right(), -r.top(), 0);
+            gp_Pnt p3(r.right(), -r.bottom(), 0);
+            gp_Pnt p4(r.left(), -r.bottom(), 0);
+
+            BRepBuilderAPI_MakeWire wireBuilder;
+            wireBuilder.Add(BRepBuilderAPI_MakeEdge(p1, p2).Edge());
+            wireBuilder.Add(BRepBuilderAPI_MakeEdge(p2, p3).Edge());
+            wireBuilder.Add(BRepBuilderAPI_MakeEdge(p3, p4).Edge());
+            wireBuilder.Add(BRepBuilderAPI_MakeEdge(p4, p1).Edge());
+
+            if (wireBuilder.IsDone()) {
+                BRepBuilderAPI_MakeFace faceBuilder(wireBuilder.Wire());
+                if (faceBuilder.IsDone())
+                    return faceBuilder.Face();
+            }
+        }
+        if (auto* ellipseItem = dynamic_cast<QGraphicsEllipseItem*>(item)) {
+            QRectF r = ellipseItem->rect();
+            if (qAbs(r.width() - r.height()) < 0.01 && r.width() > 0.01) {
+                // Circle
+                double radius = r.width() / 2.0;
+                gp_Pnt center(r.center().x(), -r.center().y(), 0);
+                gp_Circ circ(gp_Ax2(center, gp_Dir(0, 0, 1)), radius);
+
+                BRepBuilderAPI_MakeEdge edgeBuilder(circ);
+                if (edgeBuilder.IsDone()) {
+                    BRepBuilderAPI_MakeWire wireBuilder(edgeBuilder.Edge());
+                    if (wireBuilder.IsDone()) {
+                        BRepBuilderAPI_MakeFace faceBuilder(wireBuilder.Wire());
+                        if (faceBuilder.IsDone())
+                            return faceBuilder.Face();
+                    }
+                }
+            }
+        }
+    }
+    return face;
+}
+
+static void doPad(QMainWindow* window)
+{
+    TopoDS_Face face = sketchToFace();
+    if (face.IsNull()) {
+        QMessageBox::warning(window, "Pad", "No extrudable sketch geometry found.\nDraw a rectangle or circle first.");
+        return;
+    }
+
+    bool ok = false;
+    double depth = QInputDialog::getDouble(window, "Pad", "Extrusion depth:", 50.0,
+                                           0.1, 10000.0, 1, &ok);
+    if (!ok)
+        return;
+
+    // Extrude along Z axis
+    gp_Vec direction(0, 0, depth);
+    BRepPrimAPI_MakePrism prism(face, direction);
+    if (!prism.IsDone()) {
+        QMessageBox::critical(window, "Error", "Extrusion failed.");
+        return;
+    }
+
+    TopoDS_Shape solid = prism.Shape();
+
+    // Switch to 3D view and display
+    if (!viewer3d) {
+        viewer3d = new OcctView(window);
+    }
+    window->setCentralWidget(viewer3d);
+    viewer3d->show();
+    viewer3d->displayShape(solid);
+}
+
+static void enterPartDesignMode(QMainWindow* window)
+{
+    if (contextToolbar) {
+        window->removeToolBar(contextToolbar);
+        delete contextToolbar;
+    }
+
+    // Switch to 3D view
+    if (!viewer3d) {
+        viewer3d = new OcctView(window);
+    }
+    window->setCentralWidget(viewer3d);
+
+    contextToolbar = new QToolBar("Part Design", window);
+
+    QAction* padAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_Pad.svg"), "");
+    padAction->setToolTip("Pad (Extrude)");
+    QObject::connect(padAction, &QAction::triggered, [window]() {
+        doPad(window);
+    });
+
+    QAction* pocketAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_Pocket.svg"), "");
+    pocketAction->setToolTip("Pocket (Cut)");
+
+    QAction* revolutionAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_Revolution.svg"), "");
+    revolutionAction->setToolTip("Revolution");
+
+    QAction* loftAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_AdditiveLoft.svg"), "");
+    loftAction->setToolTip("Loft");
+
+    contextToolbar->addSeparator();
+
+    QAction* filletAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_Fillet.svg"), "");
+    filletAction->setToolTip("Fillet");
+
+    QAction* chamferAction = contextToolbar->addAction(
+        QIcon(":/icons/PartDesign_Chamfer.svg"), "");
+    chamferAction->setToolTip("Chamfer");
 
     window->addToolBar(contextToolbar);
     contextToolbar->show();
